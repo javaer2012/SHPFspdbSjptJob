@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="instinct">
+
+	<!--获取社保信息列表 -->
+	<select id="getNeedWHList" resultType="ThirdinfoModel">
+		SELECT
+		PSR.SOCIALSECURITYID AS MODELID,
+		PSR.APPID AS APPID,
+		PSR.APPNAME AS APPNAME,
+		PSR.IDNO AS IDNO,
+		'1001' AS INFOCODE,
+		'武汉社保' AS INFONAME,
+		(CASE
+		PSR.IS_EFFECTIVE
+		WHEN '1' THEN
+		'未查到数据'
+		WHEN '0'
+		THEN
+		'查询成功'
+		WHEN '2' THEN
+		'查询失败'
+		WHEN '' THEN
+		'未查询'
+		END) AS RESULT,
+		TO_CHAR(PSR.IMPORTDATE, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+		'累计缴费-' || PSR.TOTAL_PAY_MONTHS ||
+		';投保状态-' || PSR.STATUS ||
+		';投保工资-' ||
+		PSR.ASSURE_SALARY || ';该月个人养老缴费金额-' ||
+		PSR.CURR_PENSION_AMOUNT || ';最近正常参保单位-' || PSR.RECENT_INSURE_COMPANY ||
+		';参保单位类型-' || PSR.INSURE_COMPANY_TYPE AS REMARK
+		FROM
+		PF_SOCIALSECURITY_RECORD PSR
+		WHERE
+		PSR.ISINSTINCT = '0'
+		AND PSR.ADDRESS = '2'
+	</select>
+
+	<select id="getNeedSZList" resultType="ThirdinfoModel">
+		SELECT
+		PSR.SOCIALSECURITYID AS MODELID ,
+		PSR.APPID AS APPID,
+		PSR.APPNAME AS APPNAME,
+		PSR.IDNO AS IDNO,
+		'1002' AS INFOCODE,
+		'深圳社保' AS INFONAME,
+		(CASE
+		PSR.IS_EFFECTIVE
+		WHEN '1' THEN
+		'未查到数据'
+		WHEN '0'
+		THEN
+		'查询成功'
+		WHEN '2' THEN
+		'查询失败'
+		WHEN '' THEN
+		'未查询'
+		END) AS RESULT,
+		TO_CHAR(PSR.IMPORTDATE, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+		'累计缴费-' || PSR.TOTAL_PAY_MONTHS ||
+		';投保状态-' || PSR.STATUS ||
+		';投保工资-' ||
+		PSR.ASSURE_SALARY || ';该月个人养老缴费金额-' ||
+		PSR.CURR_PENSION_AMOUNT || ';最近正常参保单位-' || PSR.RECENT_INSURE_COMPANY ||
+		';参保单位类型-' || PSR.INSURE_COMPANY_TYPE AS REMARK
+		FROM
+		PF_SOCIALSECURITY_RECORD PSR
+		WHERE
+		PSR.ISINSTINCT = '0'
+		AND PSR.ADDRESS = '1'
+	</select>
+	<select id="queryPublicSecurityInfo" parameterType="PublicSecurityModel" resultType="ThirdinfoModel">
+		SELECT
+		PPR.PUBLICSECURITY_RECORD_ID AS MODELID,
+		PPR.APPLICATION_ID AS APPID,
+		PPR.USER_NAME AS APPNAME,
+		PPR.IDENTITY_CARD AS IDNO,
+		'0001' AS INFOCODE,
+		'公安网' AS INFONAME,
+		(CASE PPR.IS_EFFECTIVE
+		WHEN '1' THEN
+		'未查到数据'
+		WHEN '2' THEN
+		'查询失败'
+		WHEN '0' THEN
+		'查询成功'
+		END) AS RESULT,
+		TO_CHAR(CALL_DATE,'YYYYMMDDHH24MMSS') AS
+		IMPORTDATE,
+		'曾用名-'||PPR.USER_NAME_OLD||';籍贯省市县-'||PPR.CITY||';出生地省市县-'||PPR.BRONCITY||';服务处所-'||PPR.SERVICESPACES||';婚姻状况-'||PPR.MARITALSTATUS||'所属省市县-'||PPR.SSSSXQ AS REMARK
+		FROM
+		PF_PUBLICSECURITY_RECORD PPR
+		WHERE
+		PPR.ISINSTINCT = '0'
+		AND PPR.IS_EFFECTIVE != '2'
+	</select>
+
+	<select id="queryZmxyInfo" resultType="ThirdinfoModel">
+    SELECT PSR.APPLICATION_ID AS APPID,
+    PSR.USER_NAME AS APPNAME,
+    PSR.IDENTITY_CARD AS IDNO,
+    '8003' AS INFOCODE,
+    '芝麻IVS' AS INFONAME,
+    (CASE PSR.RESULTS
+    WHEN '0' THEN
+    '查询成功'
+    WHEN '1' THEN
+    '查询失败'
+    ELSE
+    '未查询'
+    END) AS RESULT,
+    TO_CHAR(PSR.CREATE_TIME, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+    REMARK AS REMARK,
+    UUID
+    FROM (SELECT T.*,
+    MAX(DECODE(RESULT_TYPE,
+    '1',
+    '三因素SCORE--' || SCORE || ';三因素风险描述说明--' ||
+    RISKDESC || ';')) OVER(PARTITION BY APPLICATION_ID, UUID) || MAX(DECODE(RESULT_TYPE, '2', '五因素SCORE--' || SCORE || ';五因素风险描述说明--' || RISKDESC || ';')) OVER(PARTITION BY APPLICATION_ID, UUID) ||
+    MAX(DECODE(RESULT_TYPE, '3', '六因素SCORE--' || SCORE || ';六因素风险描述说明--' || RISKDESC || ';')) OVER(PARTITION BY APPLICATION_ID, UUID) REMARK,
+    ROW_NUMBER() OVER(PARTITION BY APPLICATION_ID, UUID ORDER BY CREATE_TIME DESC) RN
+    FROM PF_ZMXY_RECORD T WHERE  t.ISINSTINCT = '0' AND  t.result_type = (SELECT PSCD.CHILDCOSTVALUE FROM pf_sys_child_datadictionary pscd where pscd.childclause = 'ZMXYFILEFLAG')) PSR
+    WHERE RN = 1
+
+	</select>
+
+	<select id="queryZfbInfo" resultType="ThirdinfoModel">
+		SELECT PPR.ZFB_ID AS MODELID,
+		PPR.APPLICATION_ID AS APPID,
+		PPR.USER_NAME AS APPNAME,
+		PPR.IDENTITY_CARD AS IDNO,
+		'9005' AS INFOCODE,
+		'支付宝客户信息' AS INFONAME,
+		(CASE PPR.RESULTS
+		WHEN '0' THEN
+		'查询成功'
+		WHEN '1' THEN
+		'查询失败'
+		END) AS RESULT,
+		TO_CHAR(CREATE_TIME, 'YYYYMMDDHH24MMSS') AS IMPORTDATE,
+		'注册时间-' || PPR.REGISTTIME || ';是否活跃用户-' || PPR.TAOBAOTRADE ||
+		';是否B类客户-' || PPR.BIZCUSTOMER || ';核身综合评分-' || PPR.VERIFYSCORE ||
+		';实名制类型-' || PPR.REALTYPE || ';生活类信息-' || PPR.TRADEINFOLIFE ||
+		';金融类信息-' || PPR.TRADEINFOFINANCE || ';实物类交易-' ||
+		PPR.TRADEINFOMATERIAL || ';地址有效性评分-' || PPR.TRADEINFOMATERIAL ||
+		';是否绑定快捷-' || PPR.BINDFASTPAYMENT || ';芝麻信用分-' || PPR.ZMSCORE AS REMARK
+		FROM PF_ZFB_RECORD PPR
+		WHERE PPR.ISINSTINCT = 0
+	</select>
+	<select id="queryIDInfo" resultType="ThirdinfoModel">
+		SELECT PSR.matchid AS MODELID,
+		PSR.APPID AS APPID,
+		PSR.name AS APPNAME,
+		PSR.Identitycard AS IDNO,
+		'9005' AS INFOCODE,
+		'身份证归属地' AS INFONAME,
+		'查询成功' AS RESULT,
+		TO_CHAR(PSR.Create_Date, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+		'身份证归属地-' || PSR.Identitycardplace AS REMARK
+		FROM pf_matchidentitycard_record PSR
+		WHERE PSR.ISINSTINCT = '0'
+	</select>
+	<select id="queryMobileInfo" resultType="ThirdinfoModel">
+		SELECT PSR.matchid AS MODELID,
+		PSR.APPID AS APPID,
+		PSR.name AS APPNAME,
+		PSR.Identitycard AS IDNO,
+		'9004' AS INFOCODE,
+		'手机归属地' AS INFONAME,
+		'查询成功' AS RESULT,
+		TO_CHAR(PSR.Create_Date, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+		'手机归属地—' || PSR.Mobilenoplace || ';直联手机归属地—' || PSR.Zhixiqinshumobilephoneplace || ';联系人手机归属地—' || PSR.Linkman_Cellplace|| ';征信手机归属地—' || PSR.Pboc_Telplace AS REMARK
+		FROM pf_matchmobilenumber_record PSR
+		WHERE PSR.ISINSTINCT = '0'
+	</select>
+
+	<!--获取人脸信息列表 -->
+	<select id="quaryFaceInfo" resultType="ThirdinfoModel">
+   	SELECT 
+	        A.ID AS MODELID,
+	        B.SHENQINGSHUCODE AS APPID,
+	        B.SHENQINGRENZHONGWENMINCHEN AS APPNAME,
+	        A.IDCARD AS IDNO,
+	        '9006' AS INFOCODE,
+	        '人脸对比' AS INFONAME,
+	        '' AS RESULT,
+	        TO_CHAR(B.CREATEDATE, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+	        '人脸识别时间--' || DECODE(A.VERIFYTIME,'0','',A.VERIFYTIME) || ';人脸识别验证--' || A.FACEFLAG ||
+	        ';人脸识别评分--' || DECODE(A.FACEFLAG,'0','',DECODE(A.FACESCORE,'0','0',A.FACESCORE))|| ';人脸识别结果--' || DECODE(A.COMPARERESULT,'0','', A.COMPARERESULT) AS REMARK
+      FROM (select * from pf_face_record where id in (select max(id) from pf_face_record where createdate >= (sysdate-5) group by appid)) A
+      left join pf_application B on A.mobile=B.Shenqingrenmobilenumber and upper(A.idcard)=upper(B.Shengqingrencardnumber)
+      where A.FLAG = '0' 
+      and A.channel =2 and B.Shenqingshucode is not null and B.Banknumber is not null
+	</select>
+	
+	<insert id="insertFaceDatas">
+	  insert into pf_face_record
+      select * from pf_face_record@to_pfwx pp where not exists (
+         select '1' from pf_face_record pj where pj.id=pp.id
+      ) and pp.channel='2'
+	</insert>
+
+	<!--更改上传了的信息状态 -->
+	<update id="updataWHFlag" parameterType="ThirdinfoModel">
+		UPDATE PF_SOCIALSECURITY_RECORD A SET A.ISINSTINCT=1 WHERE SOCIALSECURITYID = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataSZFlag" parameterType="ThirdinfoModel">
+		UPDATE PF_SOCIALSECURITY_RECORD A SET A.ISINSTINCT=1 WHERE SOCIALSECURITYID = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataPublicFlag" parameterType="ThirdinfoModel">
+		UPDATE PF_PUBLICSECURITY_RECORD A SET A.ISINSTINCT=1 WHERE PUBLICSECURITY_RECORD_ID = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataZmxyFlag" parameterType="ThirdinfoModel">
+		UPDATE PF_ZMXY_RECORD A SET A.ISINSTINCT=1 WHERE APPLICATION_ID = #{appid}
+	</update>
+
+	<!--更改上传了的信息状态 -->
+	<update id="updataZfbFlag" parameterType="ThirdinfoModel">
+		UPDATE PF_ZFB_RECORD A SET A.ISINSTINCT=1 WHERE ZFB_ID = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataIDFlag" parameterType="ThirdinfoModel">
+		UPDATE pf_matchidentitycard_record A SET A.ISINSTINCT=1 WHERE matchid = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataMobileFlag" parameterType="ThirdinfoModel">
+		UPDATE pf_matchmobilenumber_record A SET A.ISINSTINCT=1 WHERE matchid = #{modelid}
+	</update>
+	
+	<!--更改上传了的信息状态 -->
+	<update id="updataFaceInfoFlag" parameterType="ThirdinfoModel">
+		UPDATE PF_FACE_RECORD a SET a.flag=1,a.updatedate=sysdate where a.idcard = #{idno,jdbcType=VARCHAR}
+	</update>
+</mapper>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="approval">
+
+	<!--获取社保信息列表 -->
+	<select id="getNeedTencentList" resultType="ThirdinfoModel">
+		SELECT ptr.tencent_id AS MODELID,
+		ptr.appid AS APPID,
+		ptr.appname AS APPNAME,
+		ptr.idno AS IDNO,
+		'9002' AS INFOCODE,
+		'腾讯征信' AS INFONAME,
+		(CASE
+		ptr.IS_EFFECTIVE
+		WHEN '1' THEN
+		'未查到数据'
+		WHEN '0' THEN
+		'查询成功'
+		WHEN '2' THEN
+		'查询失败'
+		WHEN '' THEN
+		'未查询'
+		END) AS RESULT,
+		TO_CHAR(ptr.CREATE_DATE, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+		'征信评分-' || ptr.SCORE ||
+		';当前贷款状态-' || ptr.FLOAN_STATE || ';消费层次-' ||
+		ptr.FXF_LEVEL || ';转账层次-' || ptr.FZZ_LEVEL || ';理财申购层次-' ||
+		ptr.FLC_LEVEL || ';在线交易量-' || ptr.FJY_AMT_LEVEL || '信用卡还款情况-' ||
+		ptr.FHK_LEVEL || '生活缴费情况-' ||
+		ptr.FJF_LEVEL AS REMARK
+		FROM pf_tencentreport_record ptr
+		where ptr.flag = '0'
+
+	</select>
+
+
+	<select id="getNeedGZmobileList" resultType="ThirdinfoModel">
+		SELECT ptr.gz_mobile_id AS MODELID,
+		ptr.appid AS APPID,
+		ptr.appname AS APPNAME,
+		ptr.idno AS IDNO,
+		'9003' AS INFOCODE,
+		'移动话费信息' AS INFONAME,
+		(CASE
+		ptr.IS_EFFECTIVE
+		WHEN '0' THEN
+		'查询失败'
+		WHEN '1' THEN
+		'查询成功'
+		WHEN '' THEN
+		'未查询'
+		END) AS RESULT,
+		TO_CHAR(ptr.CREATE_DATE, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+		'证件号码-' || ptr.IDNO || ';实名制认证结果-' ||
+		ptr.authentication ||
+		';准入结果-' || ptr.access_conditions || ';在网年限-' || ptr.net_age ||
+		';近三月月均话费-' || ptr.last_three_months || ';套餐品牌-' || ptr.brand ||
+		';查询结果-' || (CASE ptr.IS_EFFECTIVE
+		WHEN '0' THEN
+		'查询失败'
+		WHEN '1' THEN
+		'查询成功'
+		WHEN '' THEN
+		'未查询'
+		END) || ';查询类型-' || ptr.calltype || ';返回查询时间-' || TO_CHAR(ptr.CREATE_DATE, 'YYYYMMDD') AS REMARK
+		FROM pf_gzmobile_record ptr
+		where ptr.flag = '0'
+
+	</select>
+
+	<select id="getNeedIdcheckList" resultType="ApprovalIdcheckModel">
+		SELECT a.idcheck_record_id modelid,
+		a.identity_card idno,
+		a.user_name appname,
+		a.signoffice signoffice,
+		a.idcheck_result checkresult
+		FROM
+		pf_idcheck_record a where a.flag = '0'
+
+	</select>
+
+	<select id="getNeedBrList" resultType="ThirdinfoModel">
+
+		SELECT pbr.bairong_id modelid,
+		pbr.application_id appid,
+		pbr.user_name appname,
+		pbr.identity_card idno,
+		'6001' infocode,
+		'百融金服' infoname,
+		TO_CHAR(pbr.create_time, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+		(CASE pbr.RESULTS
+		WHEN '0' THEN
+		'查询成功'
+		WHEN '1' THEN
+		'查询失败'
+		WHEN '2' THEN
+		'未查到数据'
+		END) AS RESULT,
+		pbr.result_json remark
+		FROM pf_bairong_record pbr
+		where pbr.flag = '0'
+
+	</select>
+	<select id="getNeedIDmobileList" resultType="ThirdinfoModel">
+		SELECT PSR.matchid AS MODELID,
+		PSR.APPID AS APPID,
+		PSR.name AS APPNAME,
+		PSR.Identitycard AS IDNO,
+		'6002' AS INFOCODE,
+		'身份证归属地' AS INFONAME,
+		'查询成功' AS
+		RESULT,
+		TO_CHAR(PSR.Create_Date, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+		'身份证归属地-' || PSR.Identitycardplace AS REMARK
+		FROM pf_matchidentitycard_record PSR
+		WHERE PSR.flag = '0'
+	</select>
+	<select id="getNeedZmxyIvsAppList" resultType="ApprovalZmxyIvsModel">
+		SELECT SCORE1,SUBSTR(RISKDESCRIPTION1,0,35) RISKDESCRIPTION1,SCORE2,SUBSTR(RISKDESCRIPTION2,0,35) RISKDESCRIPTION2,
+    SCORE3,SUBSTR(RISKDESCRIPTION3,0,35) RISKDESCRIPTION3,APPLICATION_ID APPID,UUID MODELID
+    FROM (SELECT MAX(DECODE(RESULT_TYPE, '1', G.SCORE)) OVER(PARTITION BY UUID) SCORE1,
+    MAX(DECODE(RESULT_TYPE, '1',
+    G.RISKDESC,'')) OVER(PARTITION BY UUID) RISKDESCRIPTION1,
+    MAX(DECODE(RESULT_TYPE, '2', G.SCORE,'')) OVER(PARTITION BY UUID) SCORE2,
+    MAX(DECODE(RESULT_TYPE, '2', G.RISKDESC,'')) OVER(PARTITION BY UUID)
+    RISKDESCRIPTION2,
+    MAX(DECODE(RESULT_TYPE, '3', G.SCORE,'')) OVER(PARTITION BY UUID) SCORE3,
+    MAX(DECODE(RESULT_TYPE, '3', G.RISKDESC,'')) OVER(PARTITION BY UUID) RISKDESCRIPTION3,
+    ROW_NUMBER()
+    OVER(PARTITION BY UUID ORDER BY 1) RN,
+    G.*
+    FROM PF_ZMXY_RECORD G
+    WHERE  g.uuid in (SELECT a.uuid FROM PF_ZMXY_RECORD a where   A.FLAG = '0' AND  a.result_type = (SELECT PSCD.CHILDCOSTVALUE FROM pf_sys_child_datadictionary pscd where pscd.childclause = 'ZMXYFILEFLAG')  ))
+    WHERE RN = 1
+	</select>
+
+	<update id="insertorupdateappinfo" parameterType="AppInfoModel">
+		MERGE INTO pf_application_info a
+		using (select #{appid} as appid from dual) b
+		on (a.appid = b.appid)
+		when matched then
+		update
+		set a.identitycard =
+		#{cardno},
+		a.name = #{username},
+		a.branch_approval_code = #{approvalcode},
+		a.from_type = #{fromtype},
+		a.last_update_date = sysdate when not matched then insert values(#{appid}, #{cardno},
+		#{username}, '', #{approvalcode}, #{fromtype}, sysdate, sysdate)
+	</update>
+
+
+	<!--更改上传了的信息状态 -->
+	<update id="updataTencentFlag" parameterType="ThirdinfoModel">
+		UPDATE pf_tencentreport_record a SET a.flag=1 where tencent_id = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataGZmobileFlag" parameterType="ThirdinfoModel">
+		UPDATE pf_gzmobile_record a SET a.flag=1 where gz_mobile_id = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataIdcheckFlag" parameterType="ApprovalIdcheckModel">
+		UPDATE pf_idcheck_record a SET a.flag=1 where idcheck_record_id = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataBrFlag" parameterType="ThirdinfoModel">
+		UPDATE pf_bairong_record a SET a.flag=1 where bairong_id = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataIDmobileFlag" parameterType="ThirdinfoModel">
+		UPDATE pf_matchidentitycard_record a SET a.flag=1 where matchid = #{modelid}
+	</update>
+	<!--更改上传了的信息状态 -->
+	<update id="updataZmxyIvsAppFlag" parameterType="ThirdinfoModel">
+		UPDATE pf_zmxy_record a SET a.flag=1 where uuid = #{modelid}
+	</update>
+</mapper>

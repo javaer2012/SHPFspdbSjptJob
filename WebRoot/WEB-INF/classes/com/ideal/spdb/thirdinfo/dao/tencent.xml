@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tencent">
+	<select id="queryApp" parameterType="TencentModel" resultType="TencentModel">
+		select * from pf_application where shenqingshucode=#{shenqingshucode}
+	</select>
+
+	<insert id="insertApp" parameterType="TencentModel">
+		insert into pf_application
+		(APPLICATIONID,shenqingshucode,shenqingrenzhongwenminchen,shengqingrencardnumber,createdate,PROCESSTYPE,QQ,IP)
+		values
+		('WX'||lpad(PF_APPRLETTER_ID_SEQ.Nextval, 8,
+		'0')||'01',#{shenqingshucode,jdbcType=VARCHAR},#{shenqingrenzhongwenminchen,jdbcType=VARCHAR},#{shengqingrencardnumber,jdbcType=VARCHAR},sysdate,'1',#{QQ,jdbcType=VARCHAR},#{IP,jdbcType=VARCHAR})
+	</insert>
+
+	<insert id="insertProcess" parameterType="TencentModel">
+		insert into pf_process
+		(PROCESS_ID,APPLICATION_ID,FLOW,PROCESS_FINISH,IS_CHECK,FLAG,CREATE_DATE)
+		values
+		(pf_process_seq.Nextval,#{shenqingshucode,jdbcType=VARCHAR},#{flow,jdbcType=VARCHAR},#{processFinish,jdbcType=VARCHAR},'','2',sysdate)
+	</insert>
+
+	<update id="mergeApplication" parameterType="TencentModel">
+		MERGE INTO PF_APPLICATION T1
+		USING (
+			SELECT #{shenqingshucode}  SHENQINGSHUCODE,
+			#{shenqingrenzhongwenminchen}  SHENQINGRENZHONGWENMINCHEN,
+			#{shengqingrencardnumber}  SHENGQINGRENCARDNUMBER,
+			'1' AS  PROCESSTYPE,
+			#{shenqingrenmobilenumber,jdbcType=VARCHAR} SHENQINGRENMOBILENUMBER,
+			#{QQ,jdbcType=VARCHAR}  QQ,
+			#{IP,jdbcType=VARCHAR}  IP
+			FROM DUAL
+		) T2
+		ON (T1.SHENQINGSHUCODE = T2.SHENQINGSHUCODE) 
+		WHEN MATCHED THEN
+		UPDATE
+		SET 
+		SHENQINGRENZHONGWENMINCHEN = T2.SHENQINGRENZHONGWENMINCHEN,
+		SHENGQINGRENCARDNUMBER = T2.SHENGQINGRENCARDNUMBER,
+		<if  test="shenqingrenmobilenumber != null and shenqingrenmobilenumber != ''" >
+			SHENQINGRENMOBILENUMBER = T2.SHENQINGRENMOBILENUMBER,
+		</if>
+		<if  test="QQ != null and QQ != ''" >
+		QQ = T2.QQ,
+		</if>
+		<if  test="IP != null and IP != ''" >
+		IP = T2.IP,
+		</if>
+		PROCESSTYPE =T2.PROCESSTYPE
+		WHEN NOT MATCHED THEN
+		INSERT
+		(APPLICATIONID,
+		SHENQINGSHUCODE,
+		SHENQINGRENZHONGWENMINCHEN,
+		SHENGQINGRENCARDNUMBER,
+		PROCESSTYPE,
+		SHENQINGRENMOBILENUMBER,
+		QQ,
+		IP)
+		VALUES
+		('WX' ||
+		LPAD(PF_APPRLETTER_ID_SEQ.NEXTVAL, 8, '0') || '01',
+		T2.SHENQINGSHUCODE,
+		T2.SHENQINGRENZHONGWENMINCHEN,
+		T2.SHENGQINGRENCARDNUMBER,
+		T2.PROCESSTYPE,
+		T2.SHENQINGRENMOBILENUMBER,
+		T2. QQ,
+		T2. IP)
+	</update>
+</mapper>

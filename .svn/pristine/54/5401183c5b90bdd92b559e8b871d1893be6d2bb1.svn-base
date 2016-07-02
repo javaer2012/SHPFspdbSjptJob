@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SZOverdue">
+	<!-- 插入获取信息备份表 -->
+
+	<parameterMap id="INOUT_PM" type="map">
+		<parameter property="IN_OVERDUEIDENTITY" jdbcType="VARCHAR" javaType="String" mode="IN" />
+		<parameter property="IN_OVERDUENAME" jdbcType="VARCHAR" javaType="String" mode="IN" />
+		<parameter property="out_system_seq" jdbcType="VARCHAR" javaType="String" mode="OUT" />
+	</parameterMap>
+	<select id="insertIntoData" statementType="CALLABLE" parameterMap="INOUT_PM" resultType="map">
+		{call PF_SPECIALQUERY_OPERATION.SZOVERDUE_OPERATION(?,?,?)}
+	</select>
+	<!-- insert Object -->
+	<update id="insertApp" parameterType="SZOverdueModel">
+		merge into pf_application pa
+		using (select #{shenqingshucode} as shenqingshucode from dual) tt
+		on (pa.shenqingshucode = tt.shenqingshucode)
+		when matched then
+		update
+		set PA.Shengqingrencardnumber = #{overdueIdentity},
+		pa.shenqingrenzhongwenminchen = #{overdueName},
+		pa.processtype = '4',
+		pa.citycode = 'SZ'
+		when not matched then
+		insert
+		(APPLICATIONID,
+		shenqingshucode,
+		Shengqingrencardnumber,
+		shenqingrenzhongwenminchen,
+		processtype,
+		citycode)
+		values
+		('WX' || lpad(PF_APPRLETTER_ID_SEQ.Nextval, 8, '0') || '01',
+		#{shenqingshucode},
+		#{overdueIdentity},
+		#{overdueName},
+		'4',
+		'SZ')
+	</update>
+	<!-- 初始化处理表 -->
+	<insert id="initprocess" parameterType="SZOverdueModel">
+		insert into pf_process
+		(process_id,
+		application_id,
+		flow,
+		process_finish,
+		is_check,
+		flag,
+		create_date,
+		time_stamp)
+		values
+		(pf_process_seq.nextval,
+		#{shenqingshucode},
+		'0000000001',
+		'1111111110',
+		'',
+		'2',
+		sysdate,
+		null)
+	</insert>
+
+</mapper>

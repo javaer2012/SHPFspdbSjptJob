@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="vehicle">
+
+	<select id="queryVehicleInfo" parameterType="VehicleModel"
+		resultType="VehicleModel">
+		select appid, idno, appname, car_usefor carUsefor, car_no
+	    carNo, car_type carType, car_belong carBelong,
+	    car_status carStatus, brand_type brandType, is_effective isEffective, flag,
+	    msg_get_date msgGetDate,
+	    check_valid_deadline checkValidDeadline, first_reg_date firstRegDate, importdate
+	    from pf_vehicle_record pv where 
+	    importdate = (select max(importdate) from pf_vehicle_record where appid=pv.appid)
+	    AND pv.appid = #{appid}
+	</select>
+	<!--获取车辆信息列表 -->
+	<select id="getNeedCarInfoList" resultType="Vehicle">
+		select
+		pt.APPID appid,
+		pt.IDNO idno,
+		pt.APPNAME appname,
+		pt.CAR_USEFOR caruserfor,
+		pt.CAR_NO carno,
+		pt.CAR_TYPE cartype,
+		pt.CAR_BELONG carbelong,
+		pt.CAR_STATUS carstatus,
+		pt.BRAND_TYPE brandtype,
+		pt.CHECK_VALID_DEADLINE checkvaliddeadline,
+		pt.FIRST_REG_DATE firstregdate,
+		pt.MSG_GET_DATE msggetdate
+		from pf_vehicle_record pt ,pf_application pa where 1=1 and pt.appid =
+		pa.shenqingshucode and pt.flag='0'
+	</select>
+	<!--获取ip地址列表 -->
+	<select id="getConfigIP" parameterType="map" resultType="java.lang.String">
+		select
+		t1.childcostvalue childCostValue from
+		pf_sys_datadictionary t inner
+		join pf_sys_child_datadictionary
+		t1 on t.soleid = t1.fatherid where
+		t.costvalue = #{costValue}
+		order by t1.soleid
+	</select>
+
+	<!--更改上传信息的状态 -->
+	<update id="updataFlag" parameterType="Vehicle">
+		UPDATE pf_vehicle_record a SET a.FLAG=1 where APPID = #{appid}
+	</update>
+
+	<select id="queryVehicleMessageList" parameterType="VehicleModel"
+		resultType="VehicleModel">
+		select * from(select a.*,rownum r from((select pvr.appid,
+		pvr.idno,
+		pvr.appname,
+		pvr.car_usefor carUsefor,
+		pvr.car_no carNo,
+		pvr.car_type carType,
+		pvr.car_belong carBelong,
+		pvr.car_status carStatus,
+		pvr.brand_type brandType,
+		(case pvr.is_effective
+		when '1' then
+		'未查到数据'
+		when '2' then
+		'查询失败'
+		when '0' then
+		'查询成功'
+		end) AS isEffective,
+		(case pvr.flag
+		when '0' then
+		'未导入'
+		when '1' then
+		'已导入'
+		end) AS flag,
+		pvr.msg_get_date msgGetDate,
+		pvr.check_valid_deadline checkValidDeadline,
+		pvr.first_reg_date firstRegDate,
+		pvr.importdate,
+		(select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = pvr.CallType) callType,
+		pvr.call_Date callDate,
+        pvr.record_Date recordDate,
+        is_local
+        
+		from pf_vehicle_record pvr
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(pvr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(pvr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(pvr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(pvr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and pvr.appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and pvr.idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and pvr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and pvr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pvr.CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and pvr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		) a))
+		WHERE r &gt; #{startRow} AND rownum &lt;= #{pageSize}
+
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+
+	<select id="selectVehicleListCount" parameterType="VehicleModel" resultType="int">
+		select count(1) from pf_vehicle_record pvr
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(pvr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(pvr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(pvr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(pvr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and pvr.appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and pvr.idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and pvr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and pvr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pvr.CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and pvr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="exportVehicleMessageList" parameterType="VehicleModel"
+		resultType="VehicleModel">
+		select * from(select a.*,rownum r from((select pvr.appid,
+		pvr.idno,
+		pvr.appname,
+		pvr.car_usefor carUsefor,
+		pvr.car_no carNo,
+		pvr.car_type carType,
+		pvr.car_belong carBelong,
+		pvr.car_status carStatus,
+		pvr.brand_type brandType,
+		(case pvr.is_effective
+			when '1' then
+			'未查到数据'
+			when '2' then
+			'查询失败'
+			when '0' then
+			'查询成功'
+			end) AS isEffective,
+		(case pvr.flag
+		when '0' then
+		'未导入'
+		when '1' then
+		'已导入'
+		end) AS flag,
+		pvr.msg_get_date msgGetDate,
+		pvr.check_valid_deadline checkValidDeadline,
+		pvr.first_reg_date firstRegDate,
+		pvr.importdate,
+		(select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = pvr.CallType) callType,
+		pvr.call_Date callDate,
+        pvr.record_Date recordDate,
+        (case pvr.is_local
+		        when '1' then '调库'
+		         when '0' then '非调库'
+		         end
+		        ) AS is_local
+		from pf_vehicle_record pvr
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(pvr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(pvr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(pvr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(pvr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and pvr.appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and pvr.idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and pvr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and pvr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pvr.CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and pvr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		) a))
+		WHERE 1=1
+		<if test="beginRecord!=null and beginRecord!='0'.toString()">
+			and r &gt;=#{beginRecord}
+		 </if>
+		 
+		 <if test="endRecord!=null and endRecord!='0'.toString()">
+			and r &lt;= #{endRecord}
+		 </if>
+		
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+
+</mapper>

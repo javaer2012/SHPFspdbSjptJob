@@ -1,0 +1,26 @@
+package com.ideal.spdb.datadictionary.dao;
+
+import java.util.Map;
+
+import com.ideal.spdb.datadictionary.model.SysDatadictionarModel;
+import com.ideal.spdb.utils.BaseDao;
+
+/**
+ * 
+ * <p>Title:  浦发五星项目</p>
+ * <p>Description:数据字典管理dao接口</p>
+ * <p>Company: 上海理想信息产业(集团)有限公司</p>
+ * @author wls
+ * create date: 2011-10-10
+ * @version 1.0
+ */
+public interface ISysDatadictionarDao extends BaseDao<SysDatadictionarModel>{
+	/**
+	 * 生成序列值
+	 * @param type子系统类型（1：接入子系统；2：队列管理子系统；3：监控管理子系统）
+	 * @return 返回生成的序列值
+	 */
+	Map<String,String> getSequenceValue(String type)throws Exception;
+
+	void changeServerIp(String errorIp,String successIp)throws Exception;
+}

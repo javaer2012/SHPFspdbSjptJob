@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="capsblacklist">
+
+	<!-- 更新上传ftp后社保数据的状态 -->
+	<update id="insertcapsblacklist" parameterType="CapsblacklistModel">
+		insert into PF_CAPSBLACKLIST
+		(CAPSBLACKLISTID,
+		IDENTITY_CARD,
+		USER_NAME,
+		CERTTYPE,
+		CHANNEL,
+		FROM_TYPE,
+		RECORD_REASON,
+		CREATE_DATE,IMPORTDATE)
+		values
+		(PF_CAPSBLACKLIST_seq.Nextval, #{cardNo}, #{username}, #{cardtype}, #{channel}, #{fromtype}, #{recordreason}, sysdate,#{importdate})
+
+	</update>
+</mapper>

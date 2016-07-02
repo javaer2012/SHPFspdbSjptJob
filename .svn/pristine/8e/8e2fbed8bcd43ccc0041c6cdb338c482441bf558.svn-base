@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="zmxy">
+	<select id="zmxy.selectResultReport" parameterType="zmxyModel" resultType="zmxyModel">
+		select 
+			c.ZMXY_ID,
+			c.user_name userName,
+		    c.application_id applicationId,
+		    c.identity_card identityCard,
+		    c.score,
+		    c.riskdesc infoCode,
+		    decode(c.results,'1','失败','0','成功') results,
+	       	decode(c.isInstinct,'1','已导入','0','未导入') isInstinct,
+	       	decode(c.is_local,'1','调库','0','非调库') isLocal,
+		    get_split_reason(c.calltype,'ZMXY_QUERY_TYPE','-') callType ,
+		    to_char(c.call_date,'yyyy-mm-dd') call_date,
+		    to_char(c.record_date,'yyyy-mm-dd') record_date
+		 from (
+		select rownum r, a.*from (
+			select *
+			from pf_zmxy_record pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.call_date,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.call_date,'yyyy-mm-dd')
+			</if>
+			<if test="beginTime2!=null and beginTime2!=''">
+				AND TO_char(pf.record_date,'yyyy-mm-dd') &gt;=
+				#{beginTime2}
+			</if>
+			<if test="endTime2!=null and  endTime2!=''">
+				AND #{endTime2} &gt;= TO_char(pf.record_date,'yyyy-mm-dd')
+			</if>
+			
+			<if test="applicationId!=null and  applicationId!=''">
+				AND pf.application_id like '%'||#{applicationId}||'%'
+			</if>
+			<if test="identityCard!=null and identityCard!=''">
+				AND pf.identity_card like '%'||#{identityCard}||'%'
+			</if>
+			<if test="results!=null and results!=''">
+				AND pf.results = #{results}
+			</if>
+			<if test="isInstinct!=null and isInstinct!=''">
+				AND pf.isInstinct = #{isInstinct}
+			</if>
+			<if test="callType!=null and callType!=''">
+				AND pf.callType = #{callType}
+			</if>
+			<if test="isLocal!=null and isLocal!=''">
+				AND pf.is_Local = #{isLocal}
+			</if>
+			order by to_number(zmxy_ID) desc
+		) a) c
+		WHERE c.r &gt;#{startRow} AND rownum &lt;= #{pageSize}
+		order by to_number(ZMXY_ID) desc
+	</select>
+	
+	<select id="zmxy.selectResultReportCount" parameterType="zmxyModel" resultType="int">
+	
+		select count(1)
+		from (
+			select *
+			from pf_zmxy_record pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.call_date,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.call_date,'yyyy-mm-dd')
+			</if>
+			<if test="beginTime2!=null and beginTime2!=''">
+				AND TO_char(pf.record_date,'yyyy-mm-dd') &gt;=
+				#{beginTime2}
+			</if>
+			<if test="endTime2!=null and  endTime2!=''">
+				AND #{endTime2} &gt;= TO_char(pf.record_date,'yyyy-mm-dd')
+			</if>
+			
+			<if test="applicationId!=null and  applicationId!=''">
+				AND pf.application_id like '%'||#{applicationId}||'%'
+			</if>
+			<if test="identityCard!=null and identityCard!=''">
+				AND pf.identity_card like '%'||#{identityCard}||'%'
+			</if>
+			<if test="results!=null and results!=''">
+				AND pf.results = #{results}
+			</if>
+			<if test="isInstinct!=null and isInstinct!=''">
+				AND pf.isInstinct = #{isInstinct}
+			</if>
+			<if test="callType!=null and callType!=''">
+				AND pf.callType = #{callType}
+			</if>
+			<if test="isLocal!=null and isLocal!=''">
+				AND pf.is_Local = #{isLocal}
+			</if>
+		)temp
+	</select>
+</mapper>

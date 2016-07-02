@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="manuallyMapper">
+
+	<insert id="addApplicationInfoById" parameterType="ManuallyModel">
+		insert into pf_application
+  		(applicationid, shenqingshucode, 
+  		<if test="shenqingrenzhongwenminchen!=null and shenqingrenzhongwenminchen!=''">
+			shenqingrenzhongwenminchen,
+		</if>
+		<if test="shenqingrencardtype!=null and shenqingrencardtype!=''">
+			shenqingrencardtype,
+		</if>
+  		<if test="shengqingrencardnumber!=null and shengqingrencardnumber!=''">
+			shengqingrencardnumber,
+		</if>
+		<if test="carnumber!=null and carnumber!=''">
+			CARNO,
+		</if>
+		<if test="shebaoCity!=null and shebaoCity!=''">
+			citycode,
+		</if>
+  		<if test="qq!=null and qq!=''">
+			qq,
+		</if>
+  		<if test="shenqingrenmobilenumber!=null and shenqingrenmobilenumber!=''">
+			shenqingrenmobilenumber,
+		</if>
+		<if test="searchType!=null and searchType!=''">
+			processtype,
+		</if>
+		<if test="email!=null and email!=''">
+			SHENQINGRENEMAIL,
+		</if>
+		<if test="familyAddress1!=null and familyAddress1!=''">
+			FAMLIYADDRESSZONE1,
+		</if>
+		<if test="familyAddress2!=null and familyAddress2!=''">
+			FAMLIYADDRESSZONE2,
+		</if>
+		<if test="familyAddress3!=null and familyAddress3!=''">
+			FAMLIYADDRESSZONE3,
+		</if>
+		<if test="companyAddress1!=null and companyAddress1!=''">
+			GONGSIADDRESSAREA1,
+		</if>
+		<if test="companyAddress2!=null and companyAddress2!=''">
+			GONGSIADDRESSAREA2,
+		</if>
+		<if test="companyAddress3!=null and companyAddress3!=''">
+			GONGSIADDRESSAREA3,
+		</if>
+		<if test="ip!=null and ip!=''">
+			IP,
+		</if>
+  		cartype
+  		)
+		values
+		('WX'||lpad(PF_APPRLETTER_ID_SEQ.Nextval, 8, '0')||'01' ,#{shenqingshucode},
+		<if test="shenqingrenzhongwenminchen!=null and shenqingrenzhongwenminchen!=''">
+			#{shenqingrenzhongwenminchen},
+		</if>
+		<if test="shenqingrencardtype!=null and shenqingrencardtype!=''">
+			#{shenqingrencardtype},
+		</if>
+  		<if test="shengqingrencardnumber!=null and shengqingrencardnumber!=''">
+			#{shengqingrencardnumber},
+		</if>
+		<if test="carnumber!=null and carnumber!=''">
+			#{carnumber},
+		</if>
+		<if test="shebaoCity!=null and shebaoCity!=''">
+			#{shebaoCity},
+		</if>
+		<if test="qq!=null and qq!=''">
+			#{qq},
+		</if>
+  		<if test="shenqingrenmobilenumber!=null and shenqingrenmobilenumber!=''">
+			#{shenqingrenmobilenumber},
+		</if>
+		<if test="searchType!=null and searchType!=''">
+			#{searchType},
+		</if>
+		<if test="email!=null and email!=''">
+			#{email,jdbcType=VARCHAR},
+		</if>
+		<if test="familyAddress1!=null and familyAddress1!=''">
+			#{familyAddress1,jdbcType=VARCHAR},
+		</if>
+		<if test="familyAddress2!=null and familyAddress2!=''">
+			#{familyAddress2,jdbcType=VARCHAR},
+		</if>
+		<if test="familyAddress3!=null and familyAddress3!=''">
+			#{familyAddress3,jdbcType=VARCHAR},
+		</if>
+		<if test="companyAddress1!=null and companyAddress1!=''">
+			#{companyAddress1,jdbcType=VARCHAR},
+		</if>
+		<if test="companyAddress2!=null and companyAddress2!=''">
+			#{companyAddress2,jdbcType=VARCHAR},
+		</if>
+		<if test="companyAddress3!=null and companyAddress3!=''">
+			#{companyAddress3,jdbcType=VARCHAR},
+		</if>
+		<if test="ip!=null and ip!=''">
+			#{ip,jdbcType=VARCHAR},
+		</if>
+		'02'
+		)
+	</insert>
+	<insert id="addPf_process" parameterType="ManuallyModel">
+		insert into pf_process
+	  (process_id, application_id, flow, process_finish, is_check, flag, create_date, time_stamp)
+	values
+	  (pf_process_seq.nextval, #{shenqingshucode}, #{flow}, #{process_finish}, '', '2',
+	   sysdate, null)
+	</insert>
+	<update id="updatePf_process" parameterType="ManuallyModel">
+		update pf_process
+	   set flow = #{flow},
+	       process_finish = #{process_finish},
+	       flag = '2',
+	       time_stamp = null
+	 where application_id = #{shenqingshucode}
+	</update>
+	
+	<delete id="deleteApplication" parameterType="ManuallyModel">
+		delete from pf_process pp where pp.application_id = #{shenqingshucode}
+	</delete>
+	
+	<delete id="deletePf_process" parameterType="ManuallyModel">
+		delete from pf_application pa where pa.shenqingshucode = #{shenqingshucode}
+	</delete>
+	
+	<update id="updateApplication" parameterType="ManuallyModel">
+		update pf_application pa set 
+		<if test="shenqingrenzhongwenminchen!=null and shenqingrenzhongwenminchen!=''">
+			pa.shenqingrenzhongwenminchen = #{shenqingrenzhongwenminchen,jdbcType=VARCHAR},
+		</if>
+		<if test="shenqingrencardtype!=null and shenqingrencardtype!=''">
+			pa.shenqingrencardtype = #{shenqingrencardtype,jdbcType=VARCHAR},
+		</if>
+		<if test="shengqingrencardnumber!=null and shengqingrencardnumber!=''">
+			pa.shengqingrencardnumber = #{shengqingrencardnumber,jdbcType=VARCHAR},
+		</if>
+		<if test="shebaoCity!=null and shebaoCity!=''">
+			pa.citycode = #{shebaoCity,jdbcType=VARCHAR},
+		</if>
+		<if test="carnumber!=null and carnumber!=''">
+			pa.carno = #{carnumber,jdbcType=VARCHAR},
+		</if>
+		<if test="qq!=null and qq!=''">
+			pa.qq = #{qq,jdbcType=VARCHAR},
+		</if>
+		<if test="shenqingrenmobilenumber!=null and shenqingrenmobilenumber!=''">
+			pa.shenqingrenmobilenumber = #{shenqingrenmobilenumber,jdbcType=VARCHAR},
+		</if>
+		<if test="searchType!=null and searchType!=''">
+			pa.processType=#{searchType,jdbcType=VARCHAR},
+		</if>
+		
+		<if test="email!=null and email!=''">
+			pa.SHENQINGRENEMAIL=#{email,jdbcType=VARCHAR},
+		</if>
+		<if test="familyAddress1!=null and familyAddress1!=''">
+			pa.FAMLIYADDRESSZONE1=#{familyAddress1,jdbcType=VARCHAR},
+		</if>
+		<if test="familyAddress2!=null and familyAddress2!=''">
+			pa.FAMLIYADDRESSZONE2=#{familyAddress2,jdbcType=VARCHAR},
+		</if>
+		<if test="familyAddress3!=null and familyAddress3!=''">
+			pa.FAMLIYADDRESSZONE3=#{familyAddress3,jdbcType=VARCHAR},
+		</if>
+		<if test="companyAddress1!=null and companyAddress1!=''">
+			pa.GONGSIADDRESSAREA1=#{companyAddress1,jdbcType=VARCHAR},
+		</if>
+		<if test="companyAddress2!=null and companyAddress2!=''">
+			pa.GONGSIADDRESSAREA2=#{companyAddress2,jdbcType=VARCHAR},
+		</if>
+		<if test="companyAddress3!=null and companyAddress3!=''">
+			pa.GONGSIADDRESSAREA3=#{companyAddress3,jdbcType=VARCHAR},
+		</if>
+		<if test="ip!=null and ip!=''">
+			pa.ip=#{ip,jdbcType=VARCHAR},
+		</if>
+		pa.cartype = '02'
+		where pa.shenqingshucode = #{shenqingshucode}
+	</update>
+	
+	
+		<update id="insertorupdateappinfo" parameterType="ManuallyModel">
+		MERGE INTO pf_application_info a
+		using (select #{shenqingshucode} as appid from dual) b
+		on (a.appid = b.appid)
+		when matched then
+		update
+		set a.identitycard =
+		#{shengqingrencardnumber},
+		a.name = #{shenqingrenzhongwenminchen},
+		a.branch_approval_code = #{approvalcode},
+		a.from_type = '1',
+		a.last_update_date = sysdate when not matched then insert values(#{shenqingshucode}, #{shengqingrencardnumber},
+		#{shenqingrenzhongwenminchen}, '', #{approvalcode}, '1', sysdate, sysdate)
+	</update>
+	
+	<select id="queryAppinfoData"  resultType="String">
+		SELECT b.childcostvalue
+		FROM pf_sys_datadictionary a, pf_sys_child_datadictionary b
+		where b.fatherid = a.soleid
+		and a.costvalue = 'BRANCH_APPROVAL_CODE'
+	</select>
+</mapper>

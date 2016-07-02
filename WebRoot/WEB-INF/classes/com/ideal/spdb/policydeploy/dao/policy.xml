@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="policy">
+	<select id="queryPolicyVersionList" parameterType="PolicyVersionModel" resultType="PolicyVersionModel">
+		select * from(select a.*,rownum r from((
+		select policyversion_code,
+	       founder,
+	       createdate,
+	       mixed_people,
+	       updatedate,
+	       policyversion_state,
+	       policyversion_remark
+		from PF_POLICYVERSION pp 
+		where 1=1
+		order by pp.createdate desc
+		) a))
+		WHERE r &gt; #{startRow} AND rownum &lt;= #{pageSize}
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+	
+	<select id="queryPolicyVersionByCode" parameterType="PolicyVersionModel" resultType="PolicyVersionModel">
+		select policyversion_code,
+	       founder,
+	       createdate,
+	       mixed_people,
+	       updatedate,
+	       policyversion_state,
+	       policyversion_remark
+		from PF_POLICYVERSION pp 
+		where 1=1 and policyversion_code = #{policyversion_code,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="queryUsedPolicyVersion" resultType="PolicyVersionModel">
+		select policyversion_code,
+	       founder,
+	       createdate,
+	       mixed_people,
+	       updatedate,
+	       policyversion_state,
+	       policyversion_remark
+		from PF_POLICYVERSION pp 
+		where 1=1 and policyversion_state = 1
+	</select>
+	
+	<select id="selectPolicyVersionCount" parameterType="PolicyVersionModel" resultType="int">
+		select count(1) from PF_POLICYVERSION pp where 1=1
+	</select>
+	
+	<select id="queryPolicyDeployInfoFromTempByCode" parameterType="PolicyDeployModel" resultType="PolicyDeployModel">
+		SELECT * FROM PF_POLICYDEPLOY_TEMP P WHERE P.POLICYVERSION_CODE = #{policyversion_code,jdbcType=VARCHAR} ORDER BY P.POLICY_NUMBER
+	</select>
+	<select id="queryPolicyDeployInfoFromUseByCode" parameterType="PolicyDeployModel" resultType="PolicyDeployModel">
+		SELECT * FROM PF_POLICYDEPLOY P WHERE P.POLICYVERSION_CODE = #{policyversion_code,jdbcType=VARCHAR} ORDER BY P.POLICY_NUMBER
+	</select>
+	<select id="queryPolicyDeployInfoFromBakByCode" parameterType="PolicyDeployModel" resultType="PolicyDeployModel">
+		SELECT * FROM PF_POLICYDEPLOY_BAK P WHERE P.POLICYVERSION_CODE = #{policyversion_code,jdbcType=VARCHAR} ORDER BY P.POLICY_NUMBER
+	</select>
+	
+	<insert id="insertPolicyDeployTemp" parameterType="PolicyDeployModel">
+		insert into pf_policydeploy_temp
+		  (policyversion_code, policy_number, policy_state, policy_priority, policy_description, jinjiantype, channelcode, citycode, job, sic, cup, age, shengqingrencardnumber, huojikagongzhaibili, fakajigou, querycount, loan_type, otherbankcardinfo, otherbankcarduseinfo, overdue_times1, overdue_times2, overdue_times3, overdue_times4, overdue_times5, overdue_times6, overdue_times7, overdue_times8, id_check, blacklist, yellowpage, pboc1, pboc2, socialsecurity, education, tencent, internal, vehicle, localpeople, mobile, yuliu1, yuliu2, yuliu3, outputcode)
+		values
+		 (#{policyversion_code,jdbcType=VARCHAR}, #{policy_number,jdbcType=VARCHAR}, #{policy_state,jdbcType=VARCHAR}, #{policy_priority,jdbcType=VARCHAR}, #{policy_description,jdbcType=VARCHAR}, #{jinjiantype,jdbcType=VARCHAR}, #{channelcode,jdbcType=VARCHAR}, #{citycode,jdbcType=VARCHAR}, #{job,jdbcType=VARCHAR}, #{sic,jdbcType=VARCHAR}, #{cup,jdbcType=VARCHAR}, #{age,jdbcType=VARCHAR}, #{shengqingrencardnumber,jdbcType=VARCHAR}, #{huojikagongzhaibili,jdbcType=VARCHAR}, #{fakajigou,jdbcType=VARCHAR}, #{querycount,jdbcType=VARCHAR}, #{loan_type,jdbcType=VARCHAR}, #{otherbankcardinfo,jdbcType=VARCHAR}, #{otherbankcarduseinfo,jdbcType=VARCHAR}, #{overdue_times1,jdbcType=VARCHAR}, #{overdue_times2,jdbcType=VARCHAR}, #{overdue_times3,jdbcType=VARCHAR}, #{overdue_times4,jdbcType=VARCHAR}, #{overdue_times5,jdbcType=VARCHAR}, #{overdue_times6,jdbcType=VARCHAR}, #{overdue_times7,jdbcType=VARCHAR}, #{overdue_times8,jdbcType=VARCHAR}, #{id_check,jdbcType=VARCHAR}, #{blacklist,jdbcType=VARCHAR}, #{yellowpage,jdbcType=VARCHAR}, #{pboc1,jdbcType=VARCHAR}, #{pboc2,jdbcType=VARCHAR}, #{socialsecurity,jdbcType=VARCHAR}, #{education,jdbcType=VARCHAR}, #{tencent,jdbcType=VARCHAR}, #{internal,jdbcType=VARCHAR}, #{vehicle,jdbcType=VARCHAR}, #{localpeople,jdbcType=VARCHAR}, #{mobile,jdbcType=VARCHAR}, #{yuliu1,jdbcType=VARCHAR}, #{yuliu2,jdbcType=VARCHAR}, #{yuliu3,jdbcType=VARCHAR}, #{outputcode,jdbcType=VARCHAR}) 
+	</insert>
+	<insert id="insertPolicyDeployFromTemp" parameterType="PolicyDeployModel">
+		insert into pf_policydeploy select * from pf_policydeploy_temp p where p.policyversion_code = #{policyversion_code,jdbcType=VARCHAR} 
+	</insert>
+	<insert id="insertPolicyDeployFromBAK" parameterType="PolicyDeployModel">
+		insert into pf_policydeploy select * from pf_policydeploy_bak p where p.policyversion_code = #{policyversion_code,jdbcType=VARCHAR} 
+	</insert>
+	<insert id="insertPolicyDeployBAKFromTemp" parameterType="PolicyDeployModel">
+		insert into pf_policydeploy_bak select * from pf_policydeploy_temp p where p.policyversion_code = #{policyversion_code,jdbcType=VARCHAR}
+	</insert>
+	<insert id="insertPolicyDeployBAKFromUse" parameterType="PolicyDeployModel">
+		insert into pf_policydeploy_bak select * from pf_policydeploy p where p.policyversion_code = #{policyversion_code,jdbcType=VARCHAR}
+	</insert>
+	<insert id="insertPolicyVersion" parameterType="PolicyVersionModel">
+		insert into pf_policyversion
+		  (policyversion_code, founder, createdate, mixed_people, updatedate, policyversion_state, policyversion_remark)
+		values
+		  (#{policyversion_code,jdbcType=VARCHAR}, #{founder,jdbcType=VARCHAR}, sysdate, #{mixed_people,jdbcType=VARCHAR}, #{updatedate,jdbcType=VARCHAR}, #{policyversion_state,jdbcType=VARCHAR}, #{policyversion_remark,jdbcType=VARCHAR})
+	</insert>
+	
+	<delete id="deletePolicyDeployTemp" parameterType="PolicyDeployModel">
+		delete pf_policydeploy_temp p where p.policyversion_code = #{policyversion_code,jdbcType=VARCHAR}
+	</delete>
+	<delete id="deletePolicyDeploy" parameterType="PolicyDeployModel">
+		delete pf_policydeploy p where p.policyversion_code = #{policyversion_code,jdbcType=VARCHAR}
+	</delete>
+	<delete id="deletePolicyDeployBAK" parameterType="PolicyDeployModel">
+		delete pf_policydeploy_bak p where p.policyversion_code = #{policyversion_code,jdbcType=VARCHAR}
+	</delete>
+	<delete id="deletePolicyVersion" parameterType="PolicyVersionModel">
+		delete pf_policyversion p where p.policyversion_code = #{policyversion_code,jdbcType=VARCHAR}
+	</delete>
+	
+	<update id="updatePolicyVersion" parameterType="PolicyVersionModel">
+		update pf_policyversion
+		   set 
+			   <if test="founder!=null and founder!=''">
+					founder = #{founder,jdbcType=VARCHAR},
+			   </if>
+			   <if test="createdate!=null and createdate!=''">
+					createdate = #{createdate,jdbcType=VARCHAR},
+			   </if>
+		       <if test="mixed_people!=null and mixed_people!=''">
+					mixed_people = #{mixed_people,jdbcType=VARCHAR},
+			   </if>
+		       <if test="policyversion_remark!=null and policyversion_remark!=''">
+					policyversion_remark = #{policyversion_remark,jdbcType=VARCHAR},
+			   </if>
+			   policyversion_state = #{policyversion_state,jdbcType=VARCHAR},
+			   updatedate = sysdate,
+		       policyversion_code = policyversion_code
+		 where policyversion_code = #{policyversion_code,jdbcType=VARCHAR}
+	</update>
+	
+</mapper>

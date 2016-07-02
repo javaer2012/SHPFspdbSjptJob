@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="rucang">
+
+	<!--获取入仓BjwtPerson -->
+	<select id="queryBjwtPersonRucangInfo" resultType="RucangModel">
+		SELECT A.BJWT_PERSON_RECORD_ID MODELID,
+		A.APPLICATIONID APPID,
+		'' IDTYPE,
+		'' IDNO,
+		A.NAME USERNAME,
+		A.O_ADDRESS || '|' || A.O_PHONE || '|' ||
+		A.ADDRESS || '|' ||
+		A.MARK_MATCHING || '|' || A.PHS_SIGN RESDATA
+		FROM PF_BJWT_PERSON_RECORD A
+		WHERE A.RUCANGFLAG = '0' and rownum &lt; 2000
+	</select>
+
+	<!--获取入仓BjwtUnit -->
+	<select id="queryBjwtUnitRucangInfo" resultType="RucangModel">
+		SELECT A.BJWT_UNIT_RECORD_ID MODELID,
+		A.APPLICATIONID APPID,
+		'' IDTYPE,
+		'' IDNO,
+		'' USERNAME,
+		A.O_UNIT_NAME || '|' || A.O_UNIT_ADDRESS || '|' ||
+		A.O_UNIT_PHONE || '|' ||
+		A.UNIT_NAME || '|' || A.UNIT_ADDRESS || '|' || A.MARK_MATCHING|| '|' || A.PERSONAL_CALL_SIGN|| '|' || A.PHS_SIGN RESDATA
+		FROM PF_BJWT_UNIT_RECORD A
+		WHERE A.RUCANGFLAG = '0' and
+		rownum &lt; 2000
+	</select>
+
+	<!--获取入仓Car -->
+	<select id="queryCarRucangInfo" resultType="RucangModel">
+		SELECT A.VEHICLERECORDID MODELID,
+		A.APPID APPID,
+		A.IDNO IDNO,
+		'01' IDTYPE,
+		A.APPNAME USERNAME,
+		B.RESULTS RESDATA
+		FROM PF_VEHICLE_RECORD A,(select
+		c.*,row_number() over (partition by c.CARNO order by
+		c.VEHICLE_ID desc) rn from PF_VEHICLE c) B
+		WHERE A.CAR_NO = B.CARNO AND A.RUCANGFLAG = '0' and b.rn = '1' and rownum &lt; 2000
+	</select>
+
+	<!--获取入仓Edu -->
+	<select id="queryEduRucangInfo" resultType="RucangModel">
+		SELECT A.EDUCATION_ID MODELID,
+		A.APPLICATION_ID APPID,
+		A.IDENTITY_CARD IDNO,
+		'01' IDTYPE,
+		A.USER_NAME USERNAME,
+		B.RESULTS RESDATA
+		FROM PF_EDUCATION_RECORD
+		A,
+		PF_EDUCATION B
+		WHERE A.IDENTITY_CARD = B.IDENTITY_CARD
+		AND A.USER_NAME = B.USER_NAME
+		AND A.RUCANGFLAG = '0'
+		and rownum &lt; 2000
+	</select>
+
+	<!--获取入仓GZmobile -->
+	<select id="queryGZmobileRucangInfo" resultType="RucangModel">
+		SELECT A.GZ_MOBILE_ID MODELID,
+		A.APPID APPID,
+		A.IDNO IDNO,
+		'01' IDTYPE,
+		A.APPNAME USERNAME,
+		A.MOBILE_NO || '|' || A.AUTHENTICATION || '|' ||
+		A.ACCESS_CONDITIONS || '|' ||
+		A.NET_AGE || '|' || A.LAST_THREE_MONTHS || '|' || A.BRAND || '|' ||
+		A.FEEDBACK_DATE RESDATA
+		FROM PF_GZMOBILE_RECORD A
+		WHERE A.RUCANGFLAG = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓JXLBLACKLIST -->
+	<select id="queryJxlblacklistRucangInfo" resultType="RucangModel">
+		SELECT a.recordid modelid,
+		a.application_id appid,
+		a.identity_card idno,
+		'01' idtype,
+		a.user_name USERNAME,
+		b.RESULTS RESDATA
+		FROM
+		pf_juxinliblacklist_record a,
+		pf_juxinliblacklist b
+		WHERE a.identity_card = b.identity_card
+		and a.user_name = b.user_name
+		and a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓Jxlreport -->
+	<select id="queryJxlreportRucangInfo" resultType="RucangModel">
+		SELECT a.jxl_id modelid,
+		a.appid appid,
+		a.idno idno,
+		'01' idtype,
+		a.appname USERNAME,
+		a.result RESDATA
+		FROM PF_JUXINLIREPORT_RECORD a
+		WHERE
+		a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓Public -->
+	<select id="queryPublicRucangInfo" resultType="RucangModel">
+		SELECT a.publicsecurity_record_id modelid,
+		a.application_id appid,
+		a.identity_card idno,
+		'01' idtype,
+		a.user_name USERNAME,
+		b.results RESDATA
+		FROM
+		pf_publicsecurity_record a,
+		pf_publicsecurity b
+		WHERE a.identity_card = b.identity_card
+		and a.user_name = b.user_name
+		and a.rucangflag = '0'
+		and rownum &lt; 2000
+	</select>
+	<!--获取入仓Sz -->
+	<select id="querySzRucangInfo" resultType="RucangModel">
+		SELECT a.socialsecurityid modelid,
+		a.appid appid,
+		a.idno idno,
+		'01' idtype,
+		a.appname username,
+		b.results resdata
+		FROM pf_socialsecurity_record a,
+		pf_socialsecurity b
+		WHERE a.idno = b.identity_card
+		and a.appname = b.user_name
+		and a.ADDRESS = b.citycode
+		and a.rucangflag = '0'
+		and a.address = '1' and rownum &lt; 2000
+	</select>
+	<!--获取入仓Tencent -->
+	<select id="queryTencentRucangInfo" resultType="RucangModel">
+		SELECT a.tencent_id modelid,
+		a.appid appid,
+		a.idno idno,
+		'01' idtype,
+		a.appname username,
+		b.results resdata
+		FROM pf_tencentfraud_record a,
+		pf_tencentfraud b
+		where a.idno = b.identity_card
+		and a.appname = b.user_name
+		and a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓TencentRT -->
+	<select id="queryTencentRTRucangInfo" resultType="RucangModel">
+		SELECT a.tencent_id modelid,
+		a.appid appid,
+		a.idno idno,
+		'01' idtype,
+		a.appname username,
+		b.results resdata
+		FROM PF_TENCENTREPORT_RECORD a,
+		PF_TENCENTREPORT b
+		where a.idno = b.identity_card
+		and a.appname = b.user_name
+		and a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓UPblacklist -->
+	<select id="queryUPblacklistRucangInfo" resultType="RucangModel">
+		SELECT a.unionpayblacklist_record_id modelid,
+		a.applicationid appid,
+		a.paper_num idno,
+		'01' idtype,
+		a.username username,
+		a.record_type_code || '|'
+		|| a.retuen_result || '|' || a.hit_message_type resdata
+		FROM
+		PF_UNIONPAYBLACKLIST_RECORD a
+		where a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓WH -->
+	<select id="queryWhRucangInfo" resultType="RucangModel">
+		SELECT a.socialsecurityid modelid,
+		a.appid appid,
+		a.idno idno,
+		'01' idtype,
+		a.appname username,
+		b.results resdata
+		FROM pf_socialsecurity_record a,
+		pf_socialsecurity b
+		WHERE a.idno = b.identity_card
+		and a.appname = b.user_name
+		and a.rucangflag = '0'
+		and a.address = '2' and rownum &lt; 2000
+	</select>
+	<!--获取入仓YellowPage -->
+	<select id="queryYellowPageRucangInfo" resultType="RucangModel">
+		SELECT a.yellowpage_record_id modelid,
+		a.applicationid appid,
+		'' idno,
+		'' idtype,
+		'' username,
+		a.address || '|' || a.phone || '|' ||
+		a.operate_state || '|' ||
+		a.business_library || '|' || a.business_library_calls || '|' ||
+		a.area_code RESDATA
+		FROM pf_yellowpage_record a
+		where a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓YellowUnit -->
+	<select id="queryYellowUnitRucangInfo" resultType="RucangModel">
+		SELECT a.yellowpage_unit_record_id modelid,
+		a.applicationid appid,
+		'' idno,
+		'' idtype,
+		'' username,
+		a.unit_name || '|' || a.unit_address || '|' ||
+		a.unit_phone || '|' ||
+		a.operate_state || '|' || a.sidekey || '|' ||
+		a.return_name || '|' || a.return_address || '|' || a.return_phone || '|' || a.operator_logo || '|' || a.operator_address || '|' ||
+		a.telephone_switchboard || '|' || a.classify || '|' || a.ys_username || '|' ||
+		a.ys_address || '|' || a.ys_phone || '|' || a.phone_name || '|' || a.phone_address || '|' || a.phone_num || '|' ||
+		a.area_code RESDATA
+		FROM pf_yellowpage_unit_record a where a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓Zmxy -->
+	<select id="queryZmxyRucangInfo" resultType="RucangModel">
+		SELECT a.uuid modelid,
+		a.application_id appid,
+		a.identity_card idno,
+		'01' idtype,
+		a.user_name username,
+		b.results resdata
+		FROM pf_zmxy_record a,
+		pf_zmxy b
+		WHERE a.identity_card = b.identity_card
+		and a.user_name = b.user_name
+		and a.result_type = b.result_type
+		and a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓IDCHECK -->
+	<select id="queryIdcheckRucangInfo" resultType="RucangModel">
+		SELECT a.idcheck_record_id modelid,
+		a.application_id appid,
+		a.identity_card idno,
+		'01' idtype,
+		b.user_name username,
+		b.results resdata
+		FROM
+		pf_idcheck_record a,
+		pf_idcheck b
+		where a.identity_card = b.identity_card
+		and a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+
+	<!--获取入仓APP -->
+	<select id="queryAppRucangInfo" resultType="RucangModel">
+
+		SELECT a.applicationid modelid,
+		a.shenqingshucode appid,
+		a.shengqingrencardnumber idno,
+		a.shenqingrencardtype idtype,
+		a.shenqingrenzhongwenminchen
+		username,
+		applicationid || '|' || status || '|' || banknumber || '|' ||
+		shenqingshucode || '|' || fushucardnumber || '|' || zhufucardflag || '|' ||
+		citycode || '|' || channelcode || '|' || jinjiantype
+		|| '|' ||
+		promotionid || '|' || shenqingkaproduct || '|' || receiveddate || '|' ||
+		microfilm || '|' || cardfrombankcode || '|' || shenqingrencardtype || '|' ||
+		shengqingrencardnumber || '|' ||
+		fazhenjiguan || '|' ||
+		idsuoquzhishi || '|' || shenqingrenshebaokanumber || '|' ||
+		shenqingrenzhongwenminchen || '|' || shenqingrenpinyin || '|' ||
+		shenqingrenenglishname || '|' || shenqingrensex ||
+		'|' ||
+		shenqingrenbirthdate || '|' || shenqingrennationality || '|' ||
+		shenqingrenmaritalstatus || '|' || shenqingrenlevelofducation || '|' ||
+		shenqingrenstation || '|' || shenqingrenzhicheng || '|' ||
+		shenqingrenzhiye || '|' || shenqingrenlanguagecode || '|' ||
+		shenqignrenfamliyareacode || '|' || shenqingrenfamliytel || '|' ||
+		shenqingrenmobilenumber || '|' || shenqingrenemail || '|' ||
+		shenqingrenfaxnumber || '|' || isphotocard || '|' || isstaffcard || '|' ||
+		shenqingrencustomertype || '|' || famliyaddresszone1 || '|' ||
+		famliyaddresszone2 || '|' || famliyaddresszone3 || '|' ||
+		famliyaddresszone4 || '|' || famliyaddresszone5 || '|' ||
+		famliypostcode || '|' || famliyhousestatus || '|' || liveyears || '|' ||
+		yuerent || '|' || baoxianzhishi || '|' || shouruzhishu || '|' ||
+		danweigongzidan || '|' || gerensuodeshuicopies || '|' ||
+		incomedepositcopies || '|' || bankinfo || '|' || qianmingzhishi || '|' ||
+		isotherdeposit || '|' || ismortgageloan || '|' || companyclassifycmp
+		|| '|' ||
+		isaccepttelephoneconsultation || '|' || isacceptletter || '|' ||
+		caichanprovetype || '|' || caichanvalue || '|' || caichanotaindate || '|' ||
+		caichanprovetype2 || '|' || caichanvalue2 || '|'
+		||
+		caichanotaindate2 || '|' || zonggongling || '|' || pufabankclient || '|' ||
+		yichiyoupufaproduct || '|' || createpufaclientdate || '|' ||
+		shenqingrenpufarelation || '|' || hujiarea1 || '|' ||
+		hujiarea2 || '|' ||
+		hujiarea3 || '|' || hujiarea4 || '|' || hujiarea5 || '|' ||
+		hujipostcode || '|' || fangchanarea1 || '|' || fangchanarea2 || '|' ||
+		fangchanarea3 || '|' || fangchanarea4 || '|' ||
+		fangchanarea5 || '|' ||
+		fangchanpostcode || '|' || fangwuprice || '|' || fangwuloanyears || '|' ||
+		zigoucheliangbrand || '|' || zigoucheliangdate || '|' ||
+		zigoucheliangnumber || '|' ||
+		zigoucheliangsituation || '|' ||
+		zigoucheliangprice || '|' || zigoucheliangyuehuankuane || '|' ||
+		gongsiaddressarea1 || '|' || gongsiaddressarea2 || '|' ||
+		gongsiaddressarea3 || '|' ||
+		gongsiaddressarea4 || '|' ||
+		gongsiaddressarea5 || '|' || gongsipostcode || '|' ||
+		gongsizhongwenname || '|' || gongsibumen || '|' || gongsizhiwu || '|' ||
+		gongsiindustrytype || '|' || gongsienterprise
+		|| '|' ||
+		gongsiproperties || '|' || gongsiscale || '|' || gongsitelareacode || '|' ||
+		gongsitel || '|' || gongsitelextension || '|' || qitatelareacode || '|' ||
+		qitatel || '|' || qitatelextension ||
+		'|' || gongsiserviceyears || '|' ||
+		shenqingrenincome || '|' || qitaincome || '|' ||
+		shoudaoincomecertificatedate || '|' || gerenmainincomesource || '|' ||
+		qitaincomesource || '|' || oldcompanyname ||
+		'|' || oldcompanypost || '|' ||
+		oldcompanytitle || '|' || oldcompanytel || '|' ||
+		oldcompanyserviceyears || '|' || oldcompanyincome || '|' ||
+		oldcompanyname2 || '|' || oldcompanyserviceyears2 || '|' ||
+		oldcompanyincome2 || '|' || shenqingrenraisenumber || '|' ||
+		shenqingrenisneedservice || '|' || shenqingrenobligatequestion || '|' ||
+		shenqingrenobligateanswer || '|' || zhixiqinshucertificate || '|'
+		||
+		zhixiqinshuname || '|' || zhixiqinshutelareacode || '|' ||
+		zhixiqinshutel || '|' || zhixiqinshurelation || '|' ||
+		zhixiqinshumobilephone || '|' || zhixiqinshuunit || '|' ||
+		zhixiqinshuaddress || '|'
+		|| zhixiqinshuaddresspostcode || '|' ||
+		linkman1certificate || '|' || linkman1name || '|' ||
+		linkman1telareacode || '|' || linkman1tel || '|' || linkman1relation || '|' ||
+		linkman1unit || '|' ||
+		linkman1address || '|' ||
+		linkman1addresspostcode || '|' || linkman1mobilephone || '|' ||
+		linkman2certificate || '|' || linkman2name || '|' ||
+		linkman2telareacode || '|' || linkman2tel || '|' ||
+		linkman2relation || '|' ||
+		linkman2unit || '|' || linkman2mobilephone || '|' || linkman2address || '|' ||
+		linkman2addresspostcode || '|' || spousecertificatetype || '|' ||
+		spousecertificatenum || '|'
+		|| spousename || '|' ||
+		spousemobilephone || '|' || spousecompanyname || '|' ||
+		spousecompanydept || '|' || spousecompanypost || '|' ||
+		spousecompanytel || '|' || spousecompanyextensiontel || '|' ||
+		spouseincomeyears || '|' || homecurrencywithholdnumber || '|' ||
+		homecurrencywithholdtype || '|' || foreigncurrencywithholdnumber || '|' ||
+		foreigncurrencywithholdtype || '|' || zuhewithholdflag ||
+		'|' ||
+		renminbizidonggouhuihuankuan || '|' || zidonggouhuihuankuantype || '|' ||
+		gouhuilv || '|' || gouhuirenminbiaccout || '|' ||
+		shenqingrenothercreditcardnum || '|' ||
+		shenqingrenothercreditcardtype
+		|| '|' ||
+		shenqingrenothercreditcardlimi || '|' || projectcode || '|' ||
+		shenqingshutuanbannum || '|' || tuanbanmainshenqingrencertific || '|' ||
+		popularizechannel || '|' || popularizeorganization ||
+		'|' ||
+		popularizepepolenum || '|' || popularizepepolename || '|' ||
+		popularizepepoletel || '|' || popularizetype || '|' || referrername || '|' ||
+		referrercardnumber || '|' || referrerjobnumber || '|'
+		||
+		referrerpopularizerelation || '|' || referrertype || '|' ||
+		billemail1 || '|' || billemail2 || '|' || cardexpressaddress || '|' ||
+		shenqingrentuziname || '|' || consumptionisneedpass || '|' ||
+		consumptionismessage || '|' || billexpressway || '|' ||
+		isagreeissuecomomoncard || '|' || rapidissueflag || '|' ||
+		isneedhairpincost || '|' || cardexpressway || '|' || cardexpresscost || '|' ||
+		expressbranch || '|' || cardlayoutnumber || '|' ||
+		yixingcardlayoutnumber1 || '|' || yixingcardlayoutnumber2 || '|' ||
+		yixingcardlayoutnumber3 || '|' || yixingcardlayoutnumber4 || '|' ||
+		shenqingrenlkaidservicelevel || '|' || shenqingrenlkaidcostlevel || '|' ||
+		companynametuzinum || '|' || shangwukajobnum || '|' ||
+		daibancomapnyapplyforflag || '|' || isprintpassmessage || '|' ||
+		baijinkavalueaddservicenum || '|' || gexinghuaidentifyingcode || '|' ||
+		chaifenziduan || '|' || shenqingrenfamliyextensiontel || '|' ||
+		linkman1extenstiontel || '|' || linkman2extenstiontel || '|' ||
+		immediatefamliyextenstiontel || '|' || ispresetcard || '|' || isssb || '|' ||
+		isrealnamesystem || '|' || issaleverify || '|' || cardfeed1product || '|' ||
+		cardfeed1layout || '|' || cardfeed2product ||
+		'|' || cardfeed2layout || '|' ||
+		cardfeed3product || '|' || cardfeed3layout || '|' || unitexpectlimit || '|' ||
+		jianjianyisiqizha || '|' || popularizesource || '|' ||
+		certificatelimit || '|' || vipflag
+		|| '|' || cpcbusinessnum || '|' ||
+		networkingverrifyflag || '|' || isrecivexinedu || '|' ||
+		keymessagemodifyflag || '|' || zhangjiangverrifyresult || '|' ||
+		flowentrustnum || '|' || hairpinbranchnum ||
+		'|' ||
+		yidonglianmingkalayoutcode || '|' || fileflag || '|' || matchflag || '|' ||
+		errorreason || '|' || product_id || '|' || maincardnumber || '|' ||
+		attachcardrate || '|' || attachfixmoney || '|' ||
+		connectwithattachmaincard || '|' || visitcompanychk || '|' ||
+		validateapplicantworkchk || '|' || fkyh1 || '|' || fkyh2 || '|' ||
+		fkyh3 || '|' || fkyh1end4 || '|' || fkyh2end4 || '|' || fkyh3end4 ||
+		'|' ||
+		fkyh1money || '|' || fkyh2money || '|' || fkyh3money || '|' ||
+		mainremark || '|' || againremark || '|' || bankafangshi || '|' ||
+		secondcard || '|' || cardend4 || '|' || modeltype || '|' ||
+		rijunzongzichan || '|' || zongfuzhai || '|' || yuehuankuane || '|' ||
+		bishu || '|' || kaihushijian || '|' || dynamicversion || '|' ||
+		qf_jiashizhenghaoma || '|' || qf_peiouxingming || '|' ||
+		qf_zhengjianleixing || '|' || qf_zhengjianhaoma || '|' ||
+		qf_unitname || '|' || qf_unitphone || '|' || qf_unitmobile || '|' ||
+		qf_ishaschild || '|' || qf_homeyearcoming || '|' || qf_shanghuname || '|'
+		||
+		qf_shanghucode || '|' || qf_producttype || '|' || qf_productcode || '|' ||
+		qf_cartotalprice || '|' || qf_shoufumoney || '|' || qf_shenqingerdu || '|' ||
+		qf_fenqiqishu || '|' || qf_fenqitype || '|'
+		||
+		qf_zichanzhengmingwenjian || '|' || qf_goucheyongtu || '|' ||
+		qf_qingfangdiaocha || '|' || qf_fenqiyingxiaorenyuancode || '|' ||
+		qf_isgetnewcard || '|' || averagetotalassets || '|' ||
+		totalliabilities || '|' || monthquota || '|' || pennumber || '|' ||
+		openingtime || '|' || carstageexistingcusnum || '|' ||
+		organizationcode || '|' || referencecode || '|' || theproductbrand || '|' ||
+		cardnum || '|' || cardtime || '|' || isacceptcreditcard || '|' ||
+		cardselect || '|' || investigationchk || '|' || theproductmodel || '|' ||
+		qcpeiougongsifeijihaoma || '|' || wxchannelcode || '|' ||
+		wxsource || '|' ||
+		wxorganizationcode || '|' || wxreferencecode || '|' || wxgroupphoto || '|' ||
+		wxmembershipnumber || '|' || wxenterprisenumber || '|' || wxsalesman || '|' ||
+		wxcharge || '|' ||
+		qcproduct || '|' || qffenqifeilv || '|' ||
+		sourcetype || '|' || qfzhuzhai || '|' || timestamp || '|' || qchuji1 || '|' ||
+		qchuji2 || '|' || qchuji3 || '|' || qcfijihao || '|' ||
+		popularizecode || '|'
+		|| updaterecordsviewone || '|' || labelmarks || '|' ||
+		lastoperateperson || '|' || jilifenqishouxufei || '|' ||
+		ziyoufenqiqishu || '|' || fenqijinexiaxian || '|' || shifoudiyao || '|' ||
+		fanganbianhao
+		|| '|' || baoliuziduan1 || '|' || baoliuziduan2 || '|' ||
+		baoliuziduan3 || '|' || baoliuziduan4 || '|' || baoliuziduan5 || '|' ||
+		baoliuziduan6 || '|' || baoliuziduan7 || '|' || baoliuziduan8 || '|'
+		||
+		baoliuziduan9 || '|' || baoliuziduan10 || '|' ||
+		fenhangshenpijigoudaima || '|' || shifoumeiguogeren || '|' ||
+		gongsidianhuaguobiedaima || '|' || jiatindianhuaguobiedaima || '|' ||
+		createdate || '|'
+		|| qchuji4 || '|' || qchuji5 || '|' || ego_flag || '|' ||
+		ego_product_no || '|' || application_type || '|' ||
+		branch_approval_code || '|' || yupialopedu || '|' || approval_code || '|' ||
+		is_accept_discount || '|' || spare_filed1 || '|' || spare_filed2 || '|' ||
+		spare_filed3 || '|' || spare_filed4 || '|' || spare_filed5 || '|' ||
+		costcenter || '|' || egobrand resdata
+		FROM pf_application
+		a
+		where a.rucangflag = '0' and rownum &lt; 2000
+	</select>
+	<!--获取入仓Bairong -->
+	<select id="queryBairongRucangInfo" resultType="RucangModel">
+		SELECT A.BAIRONG_ID MODELID,
+		A.APPLICATION_ID APPID,
+		'01' IDTYPE,
+		A.IDENTITY_CARD IDNO,
+		A.USER_NAME USERNAME,
+		A.RESULT_JSON RESDATA
+		FROM
+		pf_bairong_record
+		A
+		WHERE A.RUCANGFLAG = '0' and rownum &lt; 2000
+	</select>
+
+
+	<resultMap type="RucangModel" id="gjj51">
+		<result column="MODELID" property="modelid" />
+		<result column="APPID" property="appId" />
+		<result column="IDTYPE" property="idType" />
+		<result column="IDNO" property="idno" />
+		<result column="USERNAME" property="username" />
+		<result column="RESDATA" property="resdata" typeHandler="com.ideal.spdb.thirdinfo.util.BFileHandler" />
+	</resultMap>
+	<!--获取入仓51gjj -->
+	<select id="queryGjjRucangInfo" resultMap="gjj51">
+		SELECT
+		A.VERSION_ID MODELID,
+		A.APPID APPID,
+		'01' IDTYPE,
+		A.IDNO IDNO,
+		A.APPNAME USERNAME,
+		b.results RESDATA
+		FROM PF_51GJJ_RECORD A ,( SELECT c.*,row_number() over(partition by c.identity_card,c.user_name order by call_date desc) rn FROM pf_51gjj c) B
+		WHERE A.IDNO = B.IDENTITY_CARD and a.appname = b.user_name
+		AND A.RUCANGFLAG = '0' and b.rn = 1 and rownum &lt; 2000
+	</select>
+
+	<!--获取入仓失信人 -->
+	<select id="queryDishonestRucangInfo" resultType="RucangModel">
+		SELECT A.DISHONESTID MODELID,
+		A.APPID APPID,
+		A.DISHONEST_CARDTYPE IDTYPE,
+		A.DISHONEST_CARDNO IDNO,
+		A.DISHONEST_NAME USERNAME,
+		A.INFO_CODE|| '|' ||A.REPORT_DATE|| '|' ||A.INS_CODE RESDATA
+		FROM PF_DISHONEST_RECORD A
+		WHERE A.RUCANGFLAG = '0' AND ROWNUM &lt; 2000
+	</select>
+
+	<!--获取入仓pboc -->
+	<select id="queryPbocRucangInfo" resultType="RucangModel">
+
+		SELECT A.PBOC_ID MODELID,
+		A.APPID APPID,
+		'01' IDTYPE,
+		A.IDNO IDNO,
+		A.APPNAME USERNAME,
+		B.RESULTS RESDATA
+		FROM PF_PBOC_RECORD A, PF_PBOC B
+		WHERE A.IDNO = B.IDENTITY_CARD
+		AND A.APPNAME = B.USER_NAME
+		AND A.RUCANGFLAG = '0' AND ROWNUM &lt; 2000
+	</select>
+	<!--获取入仓安融 -->
+	<select id="queryAnrongRucangInfo" resultType="RucangModel">
+	 	SELECT A.Record_Id MODELID,
+		A.APPID APPID,
+		'01' IDTYPE,
+		A.IDNO IDNO,
+		A.User_Name USERNAME,
+		a.result_txt RESDATA
+		FROM pf_anrong_record A
+		WHERE
+		A.RUCANGFLAG = '0' AND ROWNUM   &lt; 2000
+	</select>
+
+
+
+
+
+
+
+	<!--更改BjwtPerson入仓状态 -->
+	<update id="updataBjwtPersonRucangFlag" parameterType="RucangModel">
+		UPDATE pf_bjwt_person_record A SET A.RUCANGFLAG='1' WHERE bjwt_person_record_id = #{modelid}
+	</update>
+	<!--更改BjwtUnit入仓状态 -->
+	<update id="updataBjwtUnitRucangFlag" parameterType="RucangModel">
+		UPDATE pf_bjwt_unit_record A SET A.RUCANGFLAG='1' WHERE bjwt_unit_record_id = #{modelid}
+	</update>
+	<!--更改car入仓状态 -->
+	<update id="updataCarRucangFlag" parameterType="RucangModel">
+		UPDATE pf_vehicle_record A SET A.RUCANGFLAG='1' WHERE A.VEHICLERECORDID = #{modelid}
+	</update>
+	<!--更改Edu入仓状态 -->
+	<update id="updataEduRucangFlag" parameterType="RucangModel">
+		UPDATE PF_EDUCATION_RECORD A SET A.RUCANGFLAG='1' WHERE A.EDUCATION_ID = #{modelid}
+	</update>
+	<!--更改GZmobile入仓状态 -->
+	<update id="updataGZmobileRucangFlag" parameterType="RucangModel">
+		UPDATE PF_GZMOBILE_RECORD A SET A.RUCANGFLAG='1' WHERE A.GZ_MOBILE_ID = #{modelid}
+	</update>
+	<!--更改JXLBLACKLIST入仓状态 -->
+	<update id="updataJxlblacklistRucangFlag" parameterType="RucangModel">
+		UPDATE PF_JUXINLIBLACKLIST_RECORD A SET A.RUCANGFLAG='1' WHERE A.RECORDID = #{modelid}
+	</update>
+	<!--更改Jxlreport入仓状态 -->
+	<update id="updataJxlreportRucangFlag" parameterType="RucangModel">
+		UPDATE PF_JUXINLIREPORT_RECORD A SET A.RUCANGFLAG='1' WHERE A.jxl_id = #{modelid}
+	</update>
+	<!--更改Public入仓状态 -->
+	<update id="updataPublicRucangFlag" parameterType="RucangModel">
+		UPDATE PF_PUBLICSECURITY_RECORD A SET A.RUCANGFLAG='1' WHERE A.PUBLICSECURITY_RECORD_ID = #{modelid}
+	</update>
+	<!--更改Sz入仓状态 -->
+	<update id="updataSzRucangFlag" parameterType="RucangModel">
+		UPDATE pf_socialsecurity_record A SET A.RUCANGFLAG='1' WHERE A.socialsecurityid = #{modelid}
+	</update>
+	<!--更改Tencent入仓状态 -->
+	<update id="updataTencentRucangFlag" parameterType="RucangModel">
+		UPDATE PF_TENCENTFRAUD_RECORD A SET A.RUCANGFLAG='1' WHERE A.TENCENT_ID = #{modelid}
+	</update>
+	<!--更改Tencent入仓状态 -->
+	<update id="updataTencentRTRucangFlag" parameterType="RucangModel">
+		UPDATE PF_TENCENTREPORT_RECORD A SET A.RUCANGFLAG='1' WHERE A.TENCENT_ID = #{modelid}
+	</update>
+	<!--更改UPblacklist入仓状态 -->
+	<update id="updataUPblacklistRucangFlag" parameterType="RucangModel">
+		UPDATE PF_UNIONPAYBLACKLIST_RECORD A SET A.RUCANGFLAG='1' WHERE A.UNIONPAYBLACKLIST_RECORD_ID = #{modelid}
+	</update>
+	<!--更改WH入仓状态 -->
+	<update id="updataWhRucangFlag" parameterType="RucangModel">
+		UPDATE PF_SOCIALSECURITY_RECORD A SET A.RUCANGFLAG='1' WHERE A.SOCIALSECURITYID = #{modelid}
+	</update>
+	<!--更改YellowPage入仓状态 -->
+	<update id="updataYellowPageRucangFlag" parameterType="RucangModel">
+		UPDATE PF_YELLOWPAGE_RECORD A SET A.RUCANGFLAG='1' WHERE A.YELLOWPAGE_RECORD_ID = #{modelid}
+	</update>
+	<!--更改YellowUnit入仓状态 -->
+	<update id="updataYellowUnitRucangFlag" parameterType="RucangModel">
+		UPDATE PF_YELLOWPAGE_UNIT_RECORD A SET A.RUCANGFLAG='1' WHERE A.YELLOWPAGE_UNIT_RECORD_ID = #{modelid}
+	</update>
+	<!--更改Zmxy入仓状态 -->
+	<update id="updataZmxyRucangFlag" parameterType="RucangModel">
+		UPDATE PF_ZMXY_RECORD A SET A.RUCANGFLAG='1' WHERE A.uuid = #{modelid}
+	</update>
+	<!--更改Idcheck入仓状态 -->
+	<update id="updataIdcheckRucangFlag" parameterType="RucangModel">
+		UPDATE PF_IDCHECK_RECORD A SET A.RUCANGFLAG='1' WHERE A.IDCHECK_RECORD_ID = #{modelid}
+	</update>
+	<!--更改APP入仓状态 -->
+	<update id="updataAppRucangFlag" parameterType="RucangModel">
+		UPDATE PF_APPLICATION A SET A.RUCANGFLAG='1' WHERE A.APPLICATIONID = #{modelid}
+	</update>
+	<!--更改Bairong入仓状态 -->
+	<update id="updataBairongRucangFlag" parameterType="RucangModel">
+		UPDATE PF_BAIRONG_RECORD A SET A.RUCANGFLAG='1' WHERE A.BAIRONG_ID = #{modelid}
+	</update>
+	<!--更改gjj入仓状态 -->
+	<update id="updataGjjRucangFlag" parameterType="RucangModel">
+		UPDATE PF_51GJJ_RECORD A SET A.RUCANGFLAG='1' WHERE A.VERSION_ID = #{modelid}
+	</update>
+	<!--更改失信人入仓状态 -->
+	<update id="updataDishonestRucangFlag" parameterType="RucangModel">
+		UPDATE PF_DISHONEST_RECORD A SET A.RUCANGFLAG='1' WHERE A.DISHONESTID = #{modelid}
+	</update>
+	<!--更改PBOC入仓状态 -->
+	<update id="updataPbocRucangFlag" parameterType="RucangModel">
+		UPDATE PF_PBOC_RECORD A SET A.RUCANGFLAG='1' WHERE A.PBOC_ID = #{modelid}
+	</update>
+	<!--更改anrong入仓状态 -->
+	<update id="updataAnrongRucangFlag" parameterType="RucangModel">
+		UPDATE pf_anrong_record A SET A.RUCANGFLAG='1' WHERE A.record_id = #{modelid}
+	</update>
+</mapper>

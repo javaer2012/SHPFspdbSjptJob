@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sysDatadictionar">
+	<select id="getAllDatadictionar" parameterType="SysDatadictionarModel"
+		resultType="SysDatadictionarModel">
+		SELECT t.soleid soleId,
+		t.categorys categorys,
+		t.categoryDescribe categoryDescribe,
+		t.clause
+		clause,
+		t.costvalue costValue,
+		TO_CHAR(t.createtime,'yyyy-mm-dd
+		hh24:mi:ss') createTime
+		FROM
+		pf_sys_datadictionary t
+		order by t.costvalue
+	</select>
+	<select id="queryDatadictionar" parameterType="SysDatadictionarModel"
+		resultType="SysDatadictionarModel">
+		SELECT * FROM(SELECT a.*,rownum r FROM(
+		SELECT t.soleid soleId,
+		t.categorys categorys,
+		t.categoryDescribe categoryDescribe,
+		t.clause
+		clause,
+		t.costvalue costValue,
+		TO_CHAR(t.createtime,'yyyy-mm-dd
+		hh24:mi:ss') createTime
+		FROM
+		pf_sys_datadictionary t
+		WHERE 1=1 
+		<if test="costValue!=null and costValue!=''">
+			AND t.costvalue=#{costValue}
+		</if>
+		<if test="clause!=null and clause!=''">
+			AND t.clause like '%'||#{clause}||'%'
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.createtime &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.createtime &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</if>
+		order by costvalue
+		)
+		a )WHERE r &gt; #{startRow} AND rownum
+		&lt;= #{pageSize}
+		<if test="orderFieldName==null">
+			ORDER BY costvalue
+	    </if>
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	       </if>
+		</if>
+	</select>
+
+	<select id="queryDatadictionarCount" parameterType="SysDatadictionarModel"
+		resultType="int">
+		SELECT COUNT(1)FROM pf_sys_datadictionary t
+		WHERE 1=1
+		<if test="costValue!=null and costValue!=''">
+			AND t.costvalue=#{costValue}
+		</if>
+		<if test="clause!=null and clause!=''">
+			AND t.clause like '%'||#{clause}||'%'
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.createtime &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.createtime &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</if>
+	</select>
+	<insert id="addDatadictionar" parameterType="SysDatadictionarModel">
+		INSERT INTO
+		pf_sys_datadictionary
+		(soleId,
+		categorys,
+		clause,
+		costValue,
+		createTime,
+		categoryDescribe)
+		VALUES(
+		#{soleId},
+		#{categorys},
+		#{clause},
+		#{costValue},
+		sysdate,
+		#{categoryDescribe}
+		)
+	</insert>
+	<select id="findByDatadictionar" parameterType="SysDatadictionarModel"
+		resultType="SysDatadictionarModel">
+		SELECT 
+			t.soleid soleId,
+			t.categorys categorys,
+			t.categoryDescribe categoryDescribe,
+			t.clause clause,
+			t.costvalue costValue,
+			TO_CHAR(t.createtime,'yyyy-mm-dd
+			hh24:mi:ss') createTime
+		FROM
+		    pf_sys_datadictionary t
+		WHERE t.soleId=#{soleId}
+	</select>
+	<update id="editDatadictionar" parameterType="SysDatadictionarModel">
+		UPDATE pf_sys_datadictionary t
+	     SET 
+			t.categorys=#{categorys},
+			t.categoryDescribe=#{categoryDescribe},
+			t.clause=#{clause},
+			t.costValue=#{costValue}
+		WHERE t.soleId=#{soleId}
+	</update>
+	<delete id="deleteDatadictionar" parameterType="java.util.List">
+		DELETE FROM pf_sys_datadictionary t
+		WHERE t.soleid IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	<delete id="deleteChildDatadictionars" parameterType="java.util.List">
+		DELETE FROM pf_sys_child_datadictionary t
+		WHERE t.fatherid IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	<select id="queryAllProvince" parameterType="SysDatadictionarModel"
+		resultType="SysDatadictionarModel">
+	select t.proid costValue, t.proname clause
+  from pf_data_province t
+ order by t.prosort
+
+	</select>
+	<parameterMap  id="INOUT_PM" type="map" >  
+        <parameter property="in_subsystem_id" jdbcType="VARCHAR" javaType="String" mode="IN"/>  
+        <parameter property="out_system_seq" jdbcType="VARCHAR" javaType="String" mode="OUT"/>  
+   </parameterMap> 
+	<select id="sysDatadictionar.getSequenceValue"   statementType="CALLABLE" parameterMap="INOUT_PM" resultType="map">
+	  {call pf_proc_system_seq.create_system_seq(
+	  ?,?
+	 )}  
+	</select>
+	<select id="findCostValue" parameterType="SysDatadictionarModel"
+		resultType="SysDatadictionarModel">
+		select t1.childclause childClause,
+			   t1.childcostvalue childCostValue,
+			   t1.childcategorydescribe column5
+		  from pf_sys_datadictionary t
+		 inner join pf_sys_child_datadictionary t1
+		    on t.soleid = t1.fatherid
+		 where 1=1
+		 <if test="costValue!=null and costValue!=''">
+		    AND t.costvalue = #{costValue}
+		</if>
+		 <if test="childCostValue!=null and childCostValue!=''">
+		    AND t1.childcostvalue like '%'||#{childCostValue}||'%'
+		</if>
+		 order by t1.soleid
+	</select>
+	<select id="checkDatadictionar" parameterType="SysDatadictionarModel" resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_sys_datadictionary t
+		WHERE 1=1
+		<if test="null!=clause and clause!=''">
+		AND t.clause=#{clause}
+		</if>
+		<if test="null!=soleId and soleId!=''">
+		AND t.soleid!=#{soleId}
+		</if>
+    </select>
+    
+    <update id="changeServerIp" parameterType="map">
+		UPDATE PF_SYS_CHILD_DATADICTIONARY t
+	     SET 
+			t.childcostvalue = #{successIp}
+		WHERE t.childcostvalue = #{errorIp}
+	</update>
+</mapper>

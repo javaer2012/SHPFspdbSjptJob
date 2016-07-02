@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="eucvehicleexcel">
+
+	
+	
+	<!-- 查询ip -->
+	<select id="getConfigIP" parameterType="map"
+		resultType="java.lang.String">
+		select t1.childcostvalue as childCostValue from
+		pf_sys_datadictionary t inner join pf_sys_child_datadictionary
+		t1 on t.soleid = t1.fatherid where t.costvalue = #{costValue}
+		order by t1.soleid
+	</select>
+	
+	<!-- insert Object -->
+	<insert id="insertObject" parameterType="EucVehicleModel">
+	  insert into PF_EUC_Vehicle (euc_id,shenqingshucode,shenqingrenzhongwenminchen,shengqingrencardnumber,carno,cartype,createdate) 
+	  values 
+	 (PF_EUCVehicle_SEQ.nextval,#{shenqingshucode,jdbcType=VARCHAR},#{shenqingrenzhongwenminchen,jdbcType=VARCHAR},#{shengqingrencardnumber,jdbcType=VARCHAR},#{carno,jdbcType=VARCHAR},#{cartype,jdbcType=VARCHAR},to_char(sysdate,'yyyymmdd'))
+	</insert>
+	<!--获取社保信息列表 -->
+	<update id="insertOrUpdateApp" parameterType="EduImportModel">
+		MERGE INTO pf_application pa
+		USING (select #{shenqingshucode,jdbcType=VARCHAR} as shenqingshucode from dual) pp
+		ON (pa.shenqingshucode = pp.shenqingshucode)
+		WHEN MATcHED THEN
+		update
+		set pa.shengqingrencardnumber = #{shengqingrencardnumber,jdbcType=VARCHAR},
+		pa.shenqingrenzhongwenminchen = #{shenqingrenzhongwenminchen,jdbcType=VARCHAR},
+		pa.processtype = '1',
+		pa.carno = #{carno,jdbcType=VARCHAR},
+		pa.cartype = #{cartype,jdbcType=VARCHAR}
+		where pa.shenqingshucode = pp.shenqingshucode
+		WHEN NOT MATcHED THEN
+		insert
+		(pa.APPLICATIONID,
+		pa.shenqingshucode,
+		pa.shengqingrencardnumber,
+		pa.shenqingrenzhongwenminchen,
+		pa.processtype,
+		pa.carno,
+		pa.cartype)
+		values
+		('WX' || lpad(PF_APPRLETTER_ID_SEQ.Nextval, 8, '0') || '01',
+		#{shenqingshucode,jdbcType=VARCHAR},
+		#{shengqingrencardnumber,jdbcType=VARCHAR},
+		#{shenqingrenzhongwenminchen,jdbcType=VARCHAR},
+		'1',
+		#{carno,jdbcType=VARCHAR},
+		#{cartype,jdbcType=VARCHAR})
+	</update>
+	
+	
+	
+	
+	
+	<!-- insert Object -->
+	<insert id="insertApp" parameterType="EucVehicleModel">
+	  insert into pf_application (APPLICATIONID,shenqingshucode,shenqingrenzhongwenminchen,shengqingrencardnumber,carno,cartype,createdate,PROCESSTYPE) 
+	  values 
+	 ('WX'||lpad(PF_APPRLETTER_ID_SEQ.Nextval, 8, '0')||'01',#{shenqingshucode,jdbcType=VARCHAR},#{shenqingrenzhongwenminchen,jdbcType=VARCHAR},#{shengqingrencardnumber,jdbcType=VARCHAR},#{carno,jdbcType=VARCHAR},#{cartype,jdbcType=VARCHAR},sysdate,'1')
+	</insert>
+	<insert id="insertProcess" parameterType="EucVehicleModel">
+	  insert into pf_process (PROCESS_ID,APPLICATION_ID,FLOW,PROCESS_FINISH,IS_CHECK,FLAG,CREATE_DATE) 
+	  values 
+	 (pf_process_seq.Nextval,#{shenqingshucode,jdbcType=VARCHAR},#{flag,jdbcType=VARCHAR},'00','','2',sysdate)
+	</insert>
+<select id="queryObject" parameterType="EucVehicleModel" resultType="EucVehicleModel">
+	  select * from  pf_application  where shenqingshucode=#{shenqingshucode}
+	</select>
+</mapper>

@@ -1,0 +1,623 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="tencentReport">
+
+	<select id="queryByAppId" parameterType="TencentReportModel"
+		resultType="TencentReportModel">
+		select * from (select ptr.*,ptr.is_Effective
+		isEffective,ptr.create_Date createDate from pf_tencentreport_record
+		ptr where ptr.appid=#{appid}
+		order by ptr.create_date desc
+		) where
+		rownum = 1
+	</select>
+	
+	<select id="queryAllNeedUploadReportToApproval" parameterType="TencentReportModel"
+		resultType="TencentReportModel">
+		SELECT * FROM(
+		SELECT TENCENT_ID tencentId,APPID,
+		IDNO,
+		CARD_TYPE,
+		APPNAME,
+		TO_CHAR(CDATE,'YYYY/MM/DD') AS CDATE,
+		SCORE,
+		PD,
+		TO_CHAR(CREATE_DATE,'YYYY/MM/DD') AS CREATEDATE,
+		DECODE(CALLTYPE,'3','0','1','1','2','2','3')CALLTYPE,
+		FREG_HIS,
+		FREAL_HIS,
+		FBIND_CREDIT_HIS,
+		FBIND_CRE_CNT,
+		FBIND_MOBILE_HIS,
+		FBIND_MOBILE_RECENT,
+		FBIND_MOBILE_CHG,
+		FADDRESS_CHG,
+		FXF_LEVEL,
+		FZZ_LEVEL,
+		FLC_LEVEL,
+		FHK_LEVEL,
+		FJF_LEVEL,
+		FLOAN_BALANCE,
+		FLOAN_UNPAY_CNT,
+		FLOAN_STATE,
+		FLAST_DEAD_LINE,
+		FDEAD_UNPAY_CNT,
+		FINTERNET_AGE,
+		FACTIVE_LEVEL,
+		FSOCIAL_LEVEL,
+		FJY_AMT_LEVEL,
+		FJY_MONTH_LEVEL,ROW_NUMBER()OVER(PARTITION BY APPID ORDER BY
+		CREATE_DATE DESC) RN FROM PF_TENCENTREPORT_RECORD T
+		WHERE T.APPROVALFLAG = '0'
+		)WHERE
+		RN=1 and 10000 > ROWNUM
+	</select>
+
+	<update id="batchApprovalUpdate" parameterType="java.util.List">
+	   begin  
+		<foreach collection="list" item="item" index="index" open="" close="" separator=";">
+			UPDATE PF_TENCENTREPORT_RECORD
+			set	APPROVALFLAG='1' 
+			where tencent_Id = #{item.tencentId}
+		</foreach>
+		 ;end;
+	</update>
+	
+	<select id="queryAllNeedUploadFraudReportToApproval" parameterType="TencentFraudReportModel" resultType="TencentFraudReportModel">
+		select tencent_id,
+	       appid,
+	       idno,
+	       appname,
+	       ret_code,
+	       ret_msg,
+	       type,
+	       anticheatrank,
+	       devicerank,
+	       identityrank,
+	       relachainrank,
+	       relationrank,
+	       isactuser,
+	       iscommipc,
+	       isnewdevice,
+	       isnewuser,
+	       issensiplace,
+	       provnum,
+	       qq_id,
+	       qq_name,
+	       qq_mobile,
+	       id_name,
+	       id_mobile,
+	       qq,
+	       mobile,
+	       create_date,
+	       calltype,
+	       is_effective,
+	       flag,
+	       version,
+	       isinstinct,
+	       is_local,
+	       approvalflag,
+	       nvl(max(decode(type,'identity',
+			ANTICHEATRANK || '|' || DEVICERANK || '|' ||
+			IDENTITYRANK || '|' || RELACHAINRANK || '|' || RELATIONRANK || '|' || ISACTUSER || '|' || ISCOMMIPC || '|' || ISNEWDEVICE || '|' || ISNEWUSER || '|' || ISSENSIPLACE || '|' ||
+			PROVNUM)) over(partition by appid, version),'||||||||||') || 
+			nvl(max(decode(type, 'QQ', '|' || ANTICHEATRANK || '|' || DEVICERANK || '|' || IDENTITYRANK || '|' || RELACHAINRANK || '|' || RELATIONRANK || '|' || ISACTUSER || '|' 
+			|| ISCOMMIPC || '|' || ISNEWDEVICE || '|' || ISNEWUSER || '|' || ISSENSIPLACE || '|' ||
+			PROVNUM)) over(partition by appid, version),'|||||||||||') || nvl(max(decode(type, 'mobile', '|' || ANTICHEATRANK || '|' || DEVICERANK || '|' || IDENTITYRANK || '|' 
+			|| RELACHAINRANK || '|' || RELATIONRANK || '|' || ISACTUSER || '|' || ISCOMMIPC || '|' || ISNEWDEVICE || '|' || ISNEWUSER || '|' || ISSENSIPLACE || '|' ||
+			PROVNUM)) over(partition by appid, version),'|||||||||||') remark
+	  	from pf_tencentfraud_record where approvalflag = '0' 
+	</select>
+	
+	<update id="batchFraudApprovalUpdate" parameterType="java.util.List">
+	 begin  
+		<foreach collection="list" item="item" index="index" open="" close="" separator=";">
+			UPDATE PF_TENCENTFRAUD_RECORD
+			set	APPROVALFLAG='1' 
+			where tencent_Id = ${item.tencent_id}
+		</foreach>
+		 ;end;
+	</update>
+
+	<select id="queryAllByYesterday" parameterType="TencentReportModel"
+		resultType="TencentReportModel">
+		SELECT * FROM(
+		SELECT APPID,
+		IDNO,
+		CARD_TYPE,
+		APPNAME,
+		TO_CHAR(CDATE,'YYYY/MM/DD') AS CDATE,
+		SCORE,
+		PD,
+		TO_CHAR(CREATE_DATE,'YYYY/MM/DD') AS CREATEDATE,
+		DECODE(CALLTYPE,'3','0','1','1','2','2','3')CALLTYPE,
+		FREG_HIS,
+		FREAL_HIS,
+		FBIND_CREDIT_HIS,
+		FBIND_CRE_CNT,
+		FBIND_MOBILE_HIS,
+		FBIND_MOBILE_RECENT,
+		FBIND_MOBILE_CHG,
+		FADDRESS_CHG,
+		FXF_LEVEL,
+		FZZ_LEVEL,
+		FLC_LEVEL,
+		FHK_LEVEL,
+		FJF_LEVEL,
+		FLOAN_BALANCE,
+		FLOAN_UNPAY_CNT,
+		FLOAN_STATE,
+		FLAST_DEAD_LINE,
+		FDEAD_UNPAY_CNT,
+		FINTERNET_AGE,
+		FACTIVE_LEVEL,
+		FSOCIAL_LEVEL,
+		FJY_AMT_LEVEL,
+		FJY_MONTH_LEVEL,ROW_NUMBER()OVER(PARTITION BY APPID ORDER BY
+		CREATE_DATE DESC) RN FROM PF_TENCENTREPORT_RECORD T
+		WHERE T.CREATE_DATE
+		BETWEEN TRUNC(SYSDATE-1) AND TRUNC(SYSDATE)
+		AND T.SCORE != '0'
+		)WHERE
+		RN=1 AND 1000 > ROWNUM
+	</select>
+
+	<select id="queryList" parameterType="TencentReportModel"
+		resultType="TencentReportModel">
+		SELECT * FROM(
+		SELECT T.*,ROWNUM RN FROM(
+		SELECT TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		FREAL_HIS AS FREALHIS,
+		(CASE FLAG
+		WHEN '0' THEN
+		'未导入'
+		WHEN
+		'1' THEN
+		'已导入'
+		END) AS FLAG,
+		(CASE IS_EFFECTIVE
+		WHEN '1' THEN
+		'未查到数据'
+		WHEN
+		'2' THEN
+		'查询失败'
+		WHEN '0' THEN
+		'查询成功'
+		END) AS ISEFFECTIVE,
+		TENCENTTYPE,
+		CREATE_DATE AS CREATEDATE,
+		(SELECT PSC.CHILDCLAUSE
+		FROM
+		PF_SYS_CHILD_DATADICTIONARY PSC
+		WHERE PSC.FATHERID =
+		(SELECT PSD.SOLEID
+		FROM PF_SYS_DATADICTIONARY PSD
+		WHERE PSD.COSTVALUE = 'CallType'
+		AND
+		PSC.CHILDCOSTVALUE = CALLTYPE)) CALLTYPE,
+		is_local
+		FROM (
+		SELECT TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		NULL AS FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		'3'
+		TENCENTTYPE,
+		CREATE_DATE,
+		'0' is_local
+		FROM PF_TENCENTAUTHORIZE
+		UNION ALL
+		SELECT
+		TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		TENCENTTYPE,
+		CREATE_DATE,
+		is_local
+		FROM (SELECT TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		NULL AS
+		FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		'2' TENCENTTYPE,
+		CREATE_DATE,
+		ROW_NUMBER() OVER(PARTITION BY APPID, VERSION ORDER BY
+		TENCENT_ID
+		DESC) RN,
+		is_local
+		FROM PF_TENCENTFRAUD_RECORD)
+		WHERE RN = 1
+		union all
+		SELECT
+		TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		'1' TENCENTTYPE,
+		CREATE_DATE,
+		is_local
+		FROM PF_TENCENTREPORT_RECORD
+		ORDER
+		BY
+		TENCENT_ID DESC)
+		WHERE 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="tencentType!=null and tencentType!=''">
+			and tencentType = #{tencentType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		<if test="frealHis!=null and frealHis!=''">
+			<if test="frealHis==0">
+				and freal_His = '0'
+			</if>
+			<if test="frealHis!=0">
+				and freal_His !='0'
+			</if>
+		</if>
+		ORDER BY TENCENT_ID DESC
+		)T WHERE ROWNUM &lt;= (#{pageSize} *
+		#{pageNum}) )
+		WHERE RN >= (#{pageSize}*( #{pageNum}-1)+1)
+		<if test="orderFieldName==null">
+			ORDER BY TENCENT_ID DESC
+		</if>
+	</select>
+
+	<select id="queryCount" parameterType="TencentReportModel"
+		resultType="int">
+		SELECT COUNT(1)
+		FROM (
+		SELECT
+		TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		NULL AS
+		FREAL_HIS,
+		FLAG,
+		''IS_EFFECTIVE,
+		CALLTYPE,
+		'3' TENCENTTYPE,
+		CREATE_DATE,
+		'0' as is_local
+		FROM PF_TENCENTAUTHORIZE
+		UNION ALL
+		SELECT TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		TENCENTTYPE,
+		CREATE_DATE,
+		is_local
+		FROM
+		(
+		SELECT TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		NULL AS FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		'2' TENCENTTYPE,
+		CREATE_DATE,
+		ROW_NUMBER()
+		OVER(PARTITION BY APPID, VERSION ORDER BY TENCENT_ID DESC) RN,
+		is_local
+		FROM
+		PF_TENCENTFRAUD_RECORD)
+		WHERE RN = 1
+		union all
+		SELECT TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		'1' TENCENTTYPE,
+		CREATE_DATE,
+		is_local
+		FROM PF_TENCENTREPORT_RECORD)
+		WHERE 1 = 1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="tencentType!=null and tencentType!=''">
+			and tencentType = #{tencentType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		<if test="frealHis!=null and frealHis!=''">
+			<if test="frealHis==0">
+				and freal_His = '0'
+			</if>
+			<if test="frealHis!=0">
+				and freal_His !='0'
+			</if>
+		</if>
+	</select>
+
+	<select id="exportList" parameterType="TencentReportModel"
+		resultType="TencentReportModel">
+		SELECT * FROM(
+		SELECT T.*,ROWNUM RN FROM(
+		SELECT TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		DECODE(TENCENTTYPE,'1',
+		(CASE
+		WHEN FREAL_HIS IS NULL THEN
+		'未实名制'
+		WHEN FREAL_HIS = '0' THEN
+		'未实名制'
+		ELSE
+		'实名制'
+		END)
+		,'2',NULL) AS
+		FREALHIS,
+		(CASE FLAG
+		WHEN '0' THEN
+		'未导入'
+		WHEN
+		'1' THEN
+		'已导入'
+		END) AS FLAG,
+		(CASE IS_EFFECTIVE
+		WHEN '1' THEN
+		'未查到数据'
+		WHEN
+		'2' THEN
+		'查询失败'
+		WHEN '0' THEN
+		'查询成功'
+		END) AS ISEFFECTIVE,
+		(CASE TENCENTTYPE
+		WHEN '1'
+		THEN
+		'腾讯信用评分'
+		WHEN
+		'2' THEN
+		'腾讯欺诈'
+		WHEN
+		'3' THEN
+		'腾讯授权'
+		END) AS TENCENTTYPE,
+		CREATE_DATE AS
+		CREATEDATE,
+		(SELECT
+		PSC.CHILDCLAUSE
+		FROM
+		PF_SYS_CHILD_DATADICTIONARY PSC
+		WHERE PSC.FATHERID =
+		(SELECT PSD.SOLEID
+		FROM PF_SYS_DATADICTIONARY PSD
+		WHERE PSD.COSTVALUE =
+		'CallType'
+		AND
+		PSC.CHILDCOSTVALUE = CALLTYPE))
+		CALLTYPE,
+		 (case is_local
+		        when '1' then '调库'
+		         when '0' then '非调库'
+		         end
+		        ) AS is_local
+		FROM (
+		SELECT
+		TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		NULL AS FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		'3' TENCENTTYPE,
+		CREATE_DATE,
+		'0' as is_local
+		FROM
+		PF_TENCENTAUTHORIZE
+		UNION ALL
+		SELECT TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		TENCENTTYPE,
+		CREATE_DATE,
+		is_local
+		FROM
+		(SELECT
+		TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		NULL AS
+		FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		'2'
+		TENCENTTYPE,
+		CREATE_DATE,
+		ROW_NUMBER()
+		OVER(PARTITION BY
+		APPID, VERSION
+		ORDER BY TENCENT_ID
+		DESC) RN,
+		is_local
+		FROM
+		PF_TENCENTFRAUD_RECORD)
+		WHERE RN = 1
+		union all
+		SELECT
+		TENCENT_ID,
+		APPID,
+		APPNAME,
+		IDNO,
+		FREAL_HIS,
+		FLAG,
+		IS_EFFECTIVE,
+		CALLTYPE,
+		'1' TENCENTTYPE,
+		CREATE_DATE,
+		is_local
+		FROM
+		PF_TENCENTREPORT_RECORD
+		ORDER BY
+		TENCENT_ID DESC)
+		WHERE
+		1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="tencentType!=null and tencentType!=''">
+			and tencentType = #{tencentType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		<if test="frealHis!=null and frealHis!=''">
+			<if test="frealHis==0">
+				and freal_His = '0'
+			</if>
+			<if test="frealHis!=0">
+				and freal_His !='0'
+			</if>
+		</if>
+		ORDER BY TENCENT_ID DESC
+		)T WHERE 1=1
+		<if test="endRecord!=null and endRecord!='0'.toString()">
+			AND ROWNUM &lt;= #{endRecord}
+		</if>
+		)
+		WHERE 1=1
+		<if test="beginRecord!=null and beginRecord!='0'.toString()">
+			AND RN >=#{beginRecord}
+		</if>
+		<if test="orderFieldName==null">
+			ORDER BY TENCENT_ID DESC
+		</if>
+	</select>
+</mapper>

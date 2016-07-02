@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="thirdinfo">
+
+	<!--获取社保信息列表-->
+	<select id="getNeedThirdinfoList"  resultType="ThirdinfoModel">
+
+SELECT PSR.APPID AS APPID,
+       PSR.APPNAME AS APPNAME,
+       PSR.IDNO AS IDNO,
+       '1001' AS INFOCODE,
+       '武汉社保' AS INFONAME,
+       (CASE PSR.IS_EFFECTIVE
+         WHEN '1' THEN
+          '未查到数据'
+         WHEN '0' THEN
+          '查询成功'
+         WHEN '2' THEN
+          '查询失败'
+         WHEN '' THEN
+          '未查询'
+       END) AS RESULT,
+       TO_CHAR(PSR.IMPORTDATE, 'YYYYMMDDHH24MISS') AS IMPORTDATE,
+       '累计缴费-' || PSR.TOTAL_PAY_MONTHS || ';投保状态-' || PSR.STATUS ||
+       ';投保工资-' || PSR.ASSURE_SALARY || ';该月个人养老缴费金额-' ||
+       PSR.CURR_PENSION_AMOUNT || ';最近正常参保单位-' || PSR.RECENT_INSURE_COMPANY ||
+       ';参保单位类型-' || PSR.INSURE_COMPANY_TYPE AS REMARK
+  FROM PF_SOCIALSECURITY_RECORD PSR
+ WHERE PSR.FLAG = '0'
+   AND PSR.ADDRESS = '2'
+
+
+
+	</select>
+	<!--更改上传了的信息状态-->
+	<update id="updataFlag" parameterType="ThirdinfoModel">
+	UPDATE pf_socialsecurity_record a SET a.FLAG=1 where APPID = #{appid}
+	</update>
+	
+	<!-- 获取社保返回信息数据列表 -->
+	<select id = "getSheBaoReturnList" resultType = "com.ideal.spdb.thirdinfo.model.SheBaoInfoExcelModel">
+	 select nvl(a.appname,b.appname) as appname,
+       a.idno,
+       a.mobile,
+       a.fixedtelephone,
+       b.recent_insure_company,
+       b.insure_company,
+       b.current_part_time_unit,
+       b.importdate,
+       decode(b.hukou,
+              '1',
+              '特区内城镇',
+              '2',
+              '特区内农村',
+              '3',
+              '特区外城镇',
+              '4',
+              '特区外农村',
+              '9',
+              '不详') as hukou,
+       b.social_insurance,
+       b.current_state,
+       b.first_time_insurance,
+       b.recent_base,
+       b.actual_base,
+       b.version
+  from pf_szPersonalinformation a full join pf_SZSecurityinfo b
+ on a.version = b.version
+ where b.flag = '0'
+	</select>
+	
+	<!-- 更新上传ftp后社保数据的状态 -->
+	<update id="updateFlagTo1" parameterType="com.ideal.spdb.thirdinfo.model.SheBaoInfoExcelModel">
+	update pf_SZSecurityinfo tt set tt.flag = '1' where tt.version = #{version,jdbcType=VARCHAR}
+	</update>
+	
+	<!-- 查询数据 -->
+	<select id = "getData" parameterType="com.ideal.spdb.thirdinfo.model.AllCountModel" resultType = "com.ideal.spdb.thirdinfo.model.AllCountModel">
+	  select 
+      count(distinct a.idno) as idnocount,
+      count(distinct a.mobile) as mobilecount,
+      count(distinct a.fixedtelephone) as fixedtelephonecount,
+      count(distinct b.recent_insure_company) as recent_insure_companycount,
+      count(distinct b.insure_company) as insure_companycount,
+      count(distinct b.current_part_time_unit) as current_part_time_unitcount,
+      count(distinct b.hukou) as hukoucount
+      from pf_szpersonalinformation a,pf_SZSecurityinfo b 
+      where a.version = b.version 
+		<if test="beginTime!=null and beginTime!=''">
+			and  to_char(a.createdate,'yyyy-mm-dd') &gt;=#{beginTime}
+		</if>
+		<if test="endTime!=null and  endTime!=''">
+			and #{endTime} &gt;= to_char(a.createdate,'yyyy-mm-dd')
+		</if>
+	</select>
+	
+	<!-- 统计数量 -->
+	<select  id = "getCount" resultType = "int">
+	  select 1 from dual  
+	</select>
+	
+</mapper>

@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="jxlReport">
+
+	<select id="queryList" parameterType="JxlReportModel"
+		resultType="JxlReportModel">
+		SELECT * FROM(
+		SELECT T.*,ROWNUM RN FROM(
+		SELECT JXL_ID AS jxlId,
+		APPID,
+		IDNO,
+		APPNAME,
+		(SELECT PSC.CHILDCLAUSE
+		FROM
+		PF_SYS_CHILD_DATADICTIONARY
+		PSC
+		WHERE PSC.FATHERID =
+		(SELECT PSD.SOLEID
+		FROM PF_SYS_DATADICTIONARY
+		PSD
+		WHERE PSD.COSTVALUE = 'CallType'
+		AND
+		PSC.CHILDCOSTVALUE = CALLTYPE))
+		CALLTYPE,
+		(CASE IS_EFFECTIVE
+		WHEN '1'
+		THEN
+		'未查到数据'
+		WHEN
+		'2' THEN
+		'查询失败'
+		WHEN
+		'0' THEN
+		'查询成功'
+		END) AS isEffective,
+		(CASE FLAG
+		WHEN '0' THEN
+		'未导入'
+		WHEN
+		'1'
+		THEN
+		'已导入'
+		END) AS FLAG,
+		CREATE_DATE
+		AS createDate,
+		MOBILE,
+		--RESULT,
+		IS_LOCAL
+		AS isLocal
+		FROM
+		PF_JUXINLIREPORT_RECORD
+		WHERE 1 = 1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="isLocal!=null and isLocal!=''">
+			and is_local = #{isLocal,jdbcType=VARCHAR}
+		</if>
+		ORDER BY JXL_ID DESC
+		)T WHERE ROWNUM &lt;= (#{pageSize} *#{pageNum}) )
+		WHERE RN >= (#{pageSize}*( #{pageNum}-1)+1)
+		<if test="orderFieldName==null">
+			ORDER BY jxlId DESC
+		</if>
+	</select>
+
+	<select id="queryCount" parameterType="JxlReportModel"
+		resultType="int">
+		SELECT COUNT(1)
+		FROM PF_JUXINLIREPORT_RECORD
+		WHERE 1 = 1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="isLocal!=null and isLocal!=''">
+			and is_local = #{isLocal,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+	<select id="exportList" parameterType="JxlReportModel"
+		resultType="JxlReportModel">
+		SELECT * FROM(
+		SELECT T.*,ROWNUM RN FROM(
+		SELECT JXL_ID AS jxlId,
+		APPID,
+		IDNO,
+		APPNAME,
+		(SELECT PSC.CHILDCLAUSE
+		FROM
+		PF_SYS_CHILD_DATADICTIONARY
+		PSC
+		WHERE PSC.FATHERID =
+		(SELECT PSD.SOLEID
+		FROM PF_SYS_DATADICTIONARY
+		PSD
+		WHERE PSD.COSTVALUE = 'CallType'
+		AND
+		PSC.CHILDCOSTVALUE = CALLTYPE))
+		CALLTYPE,
+		(CASE IS_EFFECTIVE
+		WHEN '1'
+		THEN
+		'未查到数据'
+		WHEN
+		'2' THEN
+		'查询失败'
+		WHEN
+		'0' THEN
+		'查询成功'
+		END) AS isEffective,
+		(CASE FLAG
+		WHEN '0' THEN
+		'未导入'
+		WHEN
+		'1'
+		THEN
+		'已导入'
+		END) AS FLAG,
+		CREATE_DATE
+		AS createDate,
+		MOBILE,
+		--RESULT,
+		IS_LOCAL
+		AS isLocal
+		FROM
+		PF_JUXINLIREPORT_RECORD
+		WHERE 1 = 1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(create_date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(create_date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="isLocal!=null and isLocal!=''">
+			and is_local = #{isLocal,jdbcType=VARCHAR}
+		</if>
+		ORDER BY JXL_ID DESC
+		)T WHERE 1=1
+		<if test="endRecord!=null and endRecord!='0'.toString()">
+			AND ROWNUM &lt;= #{endRecord}
+		</if>
+		)
+		WHERE 1=1
+		<if test="beginRecord!=null and beginRecord!='0'.toString()">
+			AND RN >=#{beginRecord}
+		</if>
+		<if test="orderFieldName==null">
+			ORDER BY jxlId DESC
+		</if>
+	</select>
+</mapper>

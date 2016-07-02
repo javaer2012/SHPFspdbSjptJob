@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="IdentityCardModel">
+	<delete id="deleteAll">
+	DELETE PF_IDENTITYCARD_AREA
+	</delete>
+	<insert id="batchAdd" parameterType="IdentityCardModel">
+		INSERT INTO PF_IDENTITYCARD_AREA(CODE,ADDRESS,CREATE_DATE) VALUES(#{code},#{address},SYSDATE)
+	</insert>
+</mapper>

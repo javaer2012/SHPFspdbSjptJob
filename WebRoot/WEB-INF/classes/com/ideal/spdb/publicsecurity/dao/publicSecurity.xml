@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="publicSecurity" >
+
+	<select id="queryPublicSecurityInfo" parameterType="PublicSecurityModel" resultType="PublicSecurityModel">
+		   SELECT PUBLICSECURITY_RECORD_ID PUBLICSECURITYRECORDID,
+       APPLICATION_ID APPLICATIONID,
+       PUBLICSECURITY_ID PUBLICSECURITYID,
+       IDENTITY_CARD IDENTITYCARD,
+       IDENTITY_CARD_RETURN IDENTITYCARDRETURN,
+       USER_NAME USERNAME,
+       USER_NAME_RETURN USERNAMERETURN,
+       USER_NAME_OLD USERNAMEOLD,
+       GENDER,
+       NATION,
+       BORNDATE,
+       SERVICESPACES,
+       EDUCATION,
+       MARITALSTATUS,
+       CITY,
+       BRONCITY,
+       ADDRESS,
+       ERRORMSG,
+       PHOTO,
+       CREATE_TIME CREATETIME,
+       TO_CHAR(CALL_DATE, 'YYYYMMDDHHMMSS') CALLDATE,
+       RECORD_DATE RECORDDATE,
+       '0001' PROJETNO,
+       '公安网' PROJETNAME,
+       BL0,
+       BL1,
+       (CASE PPR.FLAG
+         WHEN '0' THEN
+          '未导入'
+         WHEN '1' THEN
+          '已导入'
+       END) AS FLAG,
+       (CASE PPR.IS_EFFECTIVE
+         WHEN '1' THEN
+          '未查到数据'
+         WHEN '2' THEN
+          '失败'
+         WHEN '0' THEN
+          '成功'
+         WHEN '4' THEN
+          '查询成功-不一致'
+       END) AS ISEFFECTIVE,
+       (CASE PPR.CALLTYPE
+         WHEN '2' THEN
+          '公民身份号码—' || IDENTITY_CARD || ';姓名—' || USER_NAME || ';曾用名—' ||
+          USER_NAME_OLD || ';性别—' || GENDER || ';民族—' || NATION || ';出生日期—' ||
+          BORNDATE || ';籍贯省市县—' || CITY || ';出生地省市县—' || BRONCITY || ';住址—' ||
+          ADDRESS || ';服务处所—' || SERVICESPACES || ';文化程度—' || EDUCATION || ';' ||
+          '婚姻状态—' || MARITALSTATUS || ';照片—' || NVL2(PHOTO, 'Y', 'N') ||
+          ';黑名单BL—' || BL0 || BL1 || ';同住址人员信息—' ||
+          (SELECT PF_UTIL.SELECT_TZRINFO(PPR.APPLICATION_ID) FROM DUAL)
+         ELSE
+         '公民身份号码—' || IDENTITY_CARD || ';姓名—' || USER_NAME || ';曾用名—' ||
+          USER_NAME_OLD || ';性别—' || GENDER || ';民族—' || NATION || ';出生日期—' ||
+          BORNDATE || ';籍贯省市县—' || CITY || ';出生地省市县—' || BRONCITY || ';住址—' ||
+          ADDRESS || ';服务处所—' || SERVICESPACES || ';文化程度—' || EDUCATION || ';' ||
+          '婚姻状态—' || MARITALSTATUS || ';照片—' || NVL2(PHOTO, 'Y', 'N') ||
+          ';黑名单BL—' || BL0 || BL1 || ';所属省市县-'|| ssssxq
+       END) REMARK
+  FROM PF_PUBLICSECURITY_RECORD PPR
+ WHERE PPR.FLAG = '0'
+   AND PPR.IS_EFFECTIVE != '2'
+   and 10000 >= rownum
+	</select>
+	
+	<update id="updatePublicSecurityInfoStatus" parameterType="PublicSecurityModel">
+		update pf_publicsecurity_record ppr set ppr.flag = #{flag} where ppr.application_id = #{applicationId}
+	</update>
+	
+	<select id="quertPublicSecurityByAPPID" parameterType="PublicSecurityModel" resultType="PublicSecurityModel">
+		select * from (select publicsecurity_record_id publicsecurityRecordId,
+       application_id applicationId,
+       publicsecurity_id publicsecurityId,
+       identity_card identityCard,
+       identity_card_return identityCardReturn,
+       user_name userName,
+       user_name_return userNameReturn,
+       user_name_old userNameOld,
+       gender,
+       nation,
+       borndate,
+       servicespaces,
+       education,
+       maritalstatus,
+       city,
+       broncity,
+       address,
+       errormsg,
+       photo,
+       create_time createTime,
+       call_date callDate,
+       record_date recordDate,
+       bl0,
+       bl1,
+       (case ppr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+       end) AS flag,
+       ppr.is_effective isEffective,
+       ssssxq
+  from pf_publicsecurity_record ppr
+ where ppr.application_id = #{applicationId}
+ order by ppr.call_date desc
+) where rownum = 1
+	</select>
+	
+	<select id="quertPublicSecurityTZRByAPPID" parameterType="PublicSecurityModel" resultType="PublicSecurityTZRModel">
+		select tzrid,
+	       publicsecurity_id,
+	       tzrusername,
+	       tzrgender,
+	       tzrnation,
+	       tzrbrondate,
+	       insertdate
+	  from pf_publicsecurity_tzrinfo ppt
+	 where ppt.publicsecurity_id = #{applicationId}
+	</select>
+	
+	<select id="queryPublicSecurityList" parameterType="PublicSecurityModel" resultType="PublicSecurityModel">
+		select * from(select publicsecurityRecordId,
+               applicationId,
+               publicsecurityId,
+               identityCard,
+               identityCardReturn,
+               userName,
+               userNameReturn,
+               userNameOld,
+               gender,
+               nation,
+               borndate,
+               servicespaces,
+               education,
+               maritalstatus,
+               city,
+               broncity,
+               address,
+               errormsg,
+               photo,
+               createTime,
+               callDate,
+               recordDate,
+               bl0,
+               bl1,
+               flag,
+               isEffective,
+               <if test="callType!=null and callType=='A5'">
+					'无卡分期IDCHECK' callType,
+			   </if>
+			   <if test="callType == null or (callType!=null and callType!='A5')">
+					case when callType is null then '无卡分期IDCHECK' else callType end callType,
+			   </if>
+               TZRName,
+               isinBL,
+               is_local,
+               ssssxq,
+               rownum r from((
+		select publicsecurity_record_id publicsecurityRecordId,
+        application_id applicationId,
+        publicsecurity_id publicsecurityId,
+        identity_card identityCard,
+        identity_card_return identityCardReturn,
+        user_name userName,
+        user_name_return userNameReturn,
+        user_name_old userNameOld,
+        gender,
+        nation,
+        borndate,
+        servicespaces,
+        education,
+        maritalstatus,
+        city,
+        broncity,
+        address,
+        errormsg,
+        photo,
+        create_time createTime,
+        call_date callDate,
+        record_date recordDate,
+        bl0,
+        bl1,
+        (case ppr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+        end) AS flag,
+        (case ppr.is_effective
+         when '1' then
+          '未查到数据'
+         when '2' then
+          '查询失败'
+         when '0' then
+          '查询成功'
+         WHEN '4' THEN
+          '查询成功-不一致'
+        end) AS isEffective,
+        (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = ppr.CallType) callType,
+		(select pf_util.select_tzrName(application_id,version)from dual) TZRName,
+		nvl2(bl0,case bl0 when 'BL00' then case bl1 when '不存在于BL1类数据库中' then '不中' else '中' end else '中' end,'') isinBL,
+		is_local,
+                        ssssxq
+		from pf_publicsecurity_record ppr
+
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(ppr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(ppr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(ppr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(ppr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and ppr.application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and ppr.identity_card like '%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="bl0!=null and bl0!='' and bl0=='BL00'">
+			and ppr.bl0 like '%'||#{bl0,jdbcType=VARCHAR}||'%'
+			and ppr.bl1 not like '%BL11%'
+			and ppr.bl1 not like '%BL12%'
+		</if>
+		<if test="bl0!=null and bl0!='' and bl0=='BL01'">
+			and (
+				ppr.bl0 not like '%BL00%'
+				or ppr.bl1 like '%BL11%'
+				or ppr.bl1 like '%BL12%'
+			)
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and ppr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and ppr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and ppr.CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and ppr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		) a)
+		
+		<if test="bl1!=null and bl1!='' and bl1==1">
+			where tzrName is null
+		</if>
+		<if test="bl1!=null and bl1!='' and bl1==2">
+			where tzrName is not null
+		</if>
+		)
+		WHERE r &gt; #{startRow} AND rownum &lt;= #{pageSize}
+
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+	
+	<select id="selectPublicSecurityListCount" parameterType="PublicSecurityModel" resultType="int">
+		select count(1) from pf_publicsecurity_record ppr
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(ppr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(ppr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(ppr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(ppr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and ppr.application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and ppr.identity_card like '%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="bl0!=null and bl0!='' and bl0=='BL00'">
+			and ppr.bl0 like '%'||#{bl0,jdbcType=VARCHAR}||'%'
+			and ppr.bl1 not like '%BL11%'
+			and ppr.bl1 not like '%BL12%'
+		</if>
+		<if test="bl0!=null and bl0!='' and bl0=='BL01'">
+			and (
+				ppr.bl0 not like '%BL00%'
+				or ppr.bl1 like '%BL11%'
+				or ppr.bl1 like '%BL12%'
+			)
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and ppr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and ppr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and ppr.callType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="bl1!=null and bl1!='' and bl1==1">
+			and (select pf_util.select_tzrName(application_id,version)from dual) is null
+		</if>
+		<if test="bl1!=null and bl1!='' and bl1==2">
+			and (select pf_util.select_tzrName(application_id,version)from dual) is not null
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and ppr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="exportPublicSecurityList" parameterType="PublicSecurityModel" resultType="PublicSecurityModel">
+		select * from(select publicsecurityRecordId,
+               applicationId,
+               publicsecurityId,
+               identityCard,
+               identityCardReturn,
+               userName,
+               userNameReturn,
+               userNameOld,
+               gender,
+               nation,
+               borndate,
+               servicespaces,
+               education,
+               maritalstatus,
+               city,
+               broncity,
+               address,
+               errormsg,
+               bltype,
+               photo,
+               createTime,
+               callDate,
+               recordDate,
+               bl0,
+               bl1,
+               flag,
+               isEffective,
+               <if test="callType!=null and callType=='A5'">
+					'无卡分期IDCHECK' callType,
+			   </if>
+			   <if test="callType == null or (callType!=null and callType!='A5')">
+					case when callType is null then '无卡分期IDCHECK' else callType end callType,
+			   </if>
+               TZRName,
+<!--                isinBL, -->
+               is_local,
+               rownum r from((
+		select publicsecurity_record_id publicsecurityRecordId,
+       application_id applicationId,
+       publicsecurity_id publicsecurityId,
+       identity_card identityCard,
+       identity_card_return identityCardReturn,
+       user_name userName,
+       user_name_return userNameReturn,
+       user_name_old userNameOld,
+       gender,
+       nation,
+       borndate,
+       servicespaces,
+       education,
+       maritalstatus,
+       city,
+       broncity,
+       address,
+       errormsg,
+       NVL2(photo, 'Y', 'N') AS photo,
+       create_time createTime,
+       call_date callDate,
+       record_date recordDate,
+       bl0,
+       bl1,
+       bl0 || ',' || bl1 bltype,
+       (case ppr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+       end) AS flag,
+       (case ppr.is_effective
+         when '1' then
+          '未查到数据'
+         when '2' then
+          '查询失败'
+         when '0' then
+          '查询成功'
+         WHEN '4' THEN
+          '查询成功-不一致'
+       end) AS isEffective,
+       (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = ppr.callType) callType,
+           (select pf_util.select_tzrName(application_id,version)from dual) TZRName,
+           (case ppr.is_local
+		        when '1' then '调库'
+		         when '0' then '非调库'
+		         end
+		        ) AS is_local
+		from pf_publicsecurity_record ppr
+		left join pf_application pa on pa.shenqingshucode = ppr.application_id
+
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(ppr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(ppr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(ppr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(ppr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and ppr.applicationId =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and ppr.identityCard like '%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="bl0!=null and bl0!='' and bl0=='BL00'">
+			and ppr.bl0 like '%'||#{bl0,jdbcType=VARCHAR}||'%'
+			and ppr.bl1 not like '%BL11%'
+			and ppr.bl1 not like '%BL12%'
+		</if>
+		<if test="bl0!=null and bl0!='' and bl0=='BL01'">
+			and (
+				ppr.bl0 not like '%BL00%'
+				or ppr.bl1 like '%BL11%'
+				or ppr.bl1 like '%BL12%'
+			)
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and ppr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and ppr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and ppr.callType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and ppr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		) a)
+		<if test="bl1!=null and bl1!='' and bl1==1">
+			where tzrName is null
+		</if>
+		<if test="bl1!=null and bl1!='' and bl1==2">
+			where tzrName is not null
+		</if>
+		)
+		WHERE 1=1
+		<if test="beginRecord!=null and beginRecord!='0'.toString()">
+			and r &gt;=#{beginRecord}
+		 </if>
+		 
+		 <if test="endRecord!=null and endRecord!='0'.toString()">
+			and r &lt;= #{endRecord}
+		 </if>
+		
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+</mapper>

@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sysLog">
+	<insert id="addOperateLog" parameterType="SysOperateLogModel">
+		INSERT INTO
+		pf_sys_operate_log(
+		soleid,
+		logid,
+		operatedae,
+		operateUser,
+		operateContent
+		)
+		VALUES(
+		#{soleId},
+		'log'||#{soleId},
+		sysdate,
+		#{operateUser},
+		#{operateContent}
+		)
+	</insert>
+	<insert id="addExceptionLog" parameterType="SysOperateLogModel">
+		INSERT INTO
+		pf_sys_EXCEPTION_LOG(
+		soleid,
+		logid,
+		hap_datetime,
+		exceptionOutline,
+		exceptionContent
+		)
+		VALUES(
+		#{soleId},
+		'log'||#{soleId},
+		sysdate,
+		#{exceptionOutline},
+		#{exceptionContent}
+		)
+	</insert>
+	<insert id="addSystemRunLog" parameterType="PbLogSystemRun">
+		insert into pf_LOG_SYSTEM_RUN
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="logSystemRunId != null">
+				LOG_SYSTEM_RUN_ID,
+      </if>
+			<if test="type != null">
+				TYPE,
+      </if>
+			LOG_DATETIME,
+			<if test="functionName != null">
+				FUNCTION_NAME,
+      </if>
+			<if test="stepSeq != null">
+				STEP_SEQ,
+      </if>
+			<if test="terminalNo != null">
+				TERMINAL_NO,
+      </if>
+			<if test="opertionDesc != null">
+				OPERTION_DESC,
+      </if>
+			<if test="result != null">
+				RESULT,
+      </if>
+			<if test="othorDesc != null">
+				OTHOR_DESC,
+      </if>
+			<if test="remark != null">
+				REMARK,
+      </if>
+			<if test="logSource != null">
+				LOG_SOURCE,
+      </if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="logSystemRunId != null">
+				#{logSystemRunId,jdbcType=VARCHAR},
+      </if>
+			<if test="type != null">
+				#{type,jdbcType=VARCHAR},
+      </if>
+			to_char(sysdate,'yyyy-mm-dd hh24:mi:ss'),
+			<if test="functionName != null">
+				#{functionName,jdbcType=VARCHAR},
+      </if>
+			<if test="stepSeq != null">
+				#{stepSeq,jdbcType=VARCHAR},
+      </if>
+			<if test="terminalNo != null">
+				#{terminalNo,jdbcType=VARCHAR},
+      </if>
+			<if test="opertionDesc != null">
+				#{opertionDesc,jdbcType=VARCHAR},
+      </if>
+			<if test="result != null">
+				#{result,jdbcType=VARCHAR},
+      </if>
+			<if test="othorDesc != null">
+				#{othorDesc,jdbcType=VARCHAR},
+      </if>
+			<if test="remark != null">
+				#{remark,jdbcType=VARCHAR},
+      </if>
+			<if test="logSource != null">
+				#{logSource,jdbcType=VARCHAR},
+      </if>
+		</trim>
+	</insert>
+	<select id="queryLog" parameterType="SysOperateLogModel"
+		resultType="SysOperateLogModel">
+		SELECT * FROM(SELECT a.*,rownum r FROM(SELECT t.soleid soleId,
+		t.logId
+		logId,
+		TO_CHAR(t.operatedae,'yyyy-mm-dd hh24:mi:ss') operateDate,
+		t.operateuser operateUser,
+		t.operatecontent operateContent
+		FROM pf_sys_operate_log t
+		WHERE 1=1
+		<if test="operateUser!=null and operateUser!=''">
+			AND t.operateUser=#{operateUser}
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.operatedae &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.operatedae &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+		</if>
+		order by t.operatedae desc
+		)
+		a )WHERE r &gt; #{startRow} AND rownum
+		&lt;= #{pageSize}
+		<if test="orderFieldName==null">
+			ORDER BY operateDate DESC
+	    </if>
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	       </if>
+		</if>
+	</select>
+	<select id="queryLogCount" parameterType="SysOperateLogModel"
+		resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		<if test="tableName!=null and tableName!=''">
+			${tableName}
+		</if>
+		<if test="tableName==null">
+			pf_sys_operate_log
+		</if>
+		t
+		WHERE 1=1
+		<if test="operateUser!=null and operateUser!=''">
+			AND t.operateUser=#{operateUser}
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.operatedae &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.operatedae &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+		</if>
+	</select>
+
+	<delete id="deleteLog" parameterType="java.util.List">
+		DELETE FROM pf_sys_operate_log t
+		WHERE t.soleid IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	<sql id="columnList">
+		LOG_SYSTEM_RUN_ID soleId,
+		decode(TYPE,'1','系统操作日志','2','系统运行日志','3','系统异常日志') type,
+		LOG_DATETIME logDatetime,
+		FUNCTION_NAME functionName,
+		STEP_SEQ stepSeq,
+		TERMINAL_NO terminalNo,
+		OPERTION_DESC opertionDesc,
+		decode(RESULT,'1','成功','2','失败') result,
+		OTHOR_DESC othorDesc,
+		REMARK remark,
+		decode(LOG_SOURCE,'1','接入子系统','2','队列管理子系统','3','监控管理子系统') logSource
+  </sql>
+	<select id="findByRunLog" parameterType="PbLogSystemRun"
+		resultType="PbLogSystemRun">
+		SELECT
+		<include refid="columnList" />
+		FROM
+		<if test="tableName!=null and tableName!=''">
+			${tableName}
+		</if>
+		<if test="tableName==null">
+			pf_sys_operate_log
+		</if>
+		t
+		WHERE 1=1
+		AND t.LOG_SYSTEM_RUN_ID=#{soleId}
+	</select>
+	<select id="exportOperateLog" parameterType="SysOperateLogModel"
+		resultType="SysOperateLogModel">
+		select soleId,logId,operateDate,operateUser,operateContent from(
+		select soleId,logId,operateDate,operateUser,operateContent from(
+		select
+		t.soleid soleId,
+		t.logId logId,
+		TO_CHAR(t.operatedae,'yyyy-mm-dd hh24:mi:ss')
+ 		operateDate,
+		t.operateuser operateUser,
+		t.operatecontent operateContent
+		from
+		<if test="tableName!=null and tableName!=''">
+			${tableName}
+		</if>
+		<if test="tableName==null or tableName==''">
+			pf_sys_operate_log
+		</if>
+		t 
+		WHERE 1=1 
+		<if test="operateUser!=null and operateUser!=''">
+			AND t.operateUser=#{operateUser}
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.operatedae &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.operatedae &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+		</if>
+		order by t.operatedae desc
+		)
+		where rownum &lt;=#{endRecord}
+		minus
+		select soleId,logId,operateDate,operateUser,operateContent from(
+		select
+		t1.soleid soleId,
+		t1.logId logId,
+		TO_CHAR(t1.operatedae,'yyyy-mm-dd hh24:mi:ss')
+		operateDate,
+		t1.operateuser operateUser,
+		t1.operatecontent
+		operateContent
+		from
+		<if test="tableName!=null and tableName!=''">
+			${tableName}
+		</if>
+		<if test="tableName==null or tableName==''">
+			pf_sys_operate_log
+		</if>
+		t1 
+		WHERE 1=1 
+		<if test="operateUser!=null and operateUser!=''">
+			AND t1.operateUser=#{operateUser}
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t1.operatedae &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t1.operatedae &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+		</if>
+		order by t1.operatedae desc
+		)
+		where rownum &lt;= #{beginRecord}
+		)t2 order by t2.operateDate desc
+	</select>
+	<select id="exportRunLog" parameterType="PbLogSystemRun"
+		resultType="PbLogSystemRun">
+		select
+		<include refid="columnList" />
+		from
+		<if test="tableName!=null and tableName!=''">
+			${tableName}
+		</if>
+		<if test="tableName==null">
+			pf_log_system_run
+		</if>
+		where rownum &lt;=#{endRecord}
+		minus
+		select
+		<include refid="columnList" />
+		from
+		<if test="tableName!=null and tableName!=''">
+			${tableName}
+		</if>
+		<if test="tableName==null">
+			pf_log_system_run
+		</if>
+		where rownum &lt;= #{beginRecord}
+	</select>
+	<select id="querySysRunLog" parameterType="PbLogSystemRun"
+		resultType="PbLogSystemRun">
+		SELECT * FROM(SELECT a.*,rownum r FROM(
+		SELECT
+		<include refid="columnList" />
+		FROM
+		<if test="tableName!=null and tableName!=''">
+			${tableName}
+		</if>
+		<if test="tableName==null">
+			pf_log_system_run
+		</if>
+		t
+		WHERE 1=1
+		<if test="functionName!=null and functionName!=''">
+			AND t.FUNCTION_NAME=#{functionName}
+		</if>
+		<if test="type!=null and type!=''">
+			AND t.type=#{type}
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND to_date(t.LOG_DATETIME,'yyyy-mm-dd hh24:mi:ss ') &gt;=
+			to_date(#{beginTime}||'00:00:00','yyyy-mm-dd hh24:mi:ss ')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND to_date(t.LOG_DATETIME,'yyyy-mm-dd hh24:mi:ss') &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			
+			</if>
+		)
+		a )WHERE r &gt; #{startRow} AND rownum
+		&lt;= #{pageSize}
+		<if test="orderFieldName==null">
+			ORDER BY soleId DESC
+	    </if>
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	       </if>
+		</if>
+	</select>
+
+	<select id="getSysRunLogCount" parameterType="PbLogSystemRun"
+		resultType="int">
+		SELECT COUNT(1)FROM
+		<if test="tableName!=null and tableName!=''">
+			${tableName}
+		</if>
+		<if test="tableName==null">
+			pf_log_system_run
+		</if>
+		t
+		WHERE 1=1
+		<if test="functionName!=null and functionName!=''">
+			AND t.FUNCTION_NAME=#{functionName}
+		</if>
+		<if test="type!=null and type!=''">
+			AND t.type=#{type}
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND to_date(t.LOG_DATETIME,'yyyy-mm-dd hh24:mi:ss ') &gt;=
+			to_date(#{beginTime}||'00:00:00','yyyy-mm-dd hh24:mi:ss ')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND to_date(t.LOG_DATETIME,'yyyy-mm-dd hh24:mi:ss') &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			
+			</if>
+	</select>
+	<delete id="deleteRunLog" parameterType="java.util.List">
+		DELETE FROM pf_log_system_run t
+		WHERE t.LOG_SYSTEM_RUN_ID IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+</mapper>

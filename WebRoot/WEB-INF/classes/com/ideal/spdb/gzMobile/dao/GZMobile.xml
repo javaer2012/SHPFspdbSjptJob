@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="gzmobile">
+
+	<select id="queryGZMobileRecordByApplicationId" parameterType="GZMobileRecord"
+		resultType="GZMobileRecord">
+		select * from (select pgr.appid applicationId, pgr.appname userName, pgr.idno identityCard, pgr.mobile_no, pgr.authentication,
+	    pgr.access_conditions, pgr.net_age, pgr.last_three_months, pgr.brand,
+	    pgr.is_effective isEffective,
+	    (select psc.childclause
+	            from pf_sys_child_datadictionary psc
+	           where psc.fatherid =
+	                (select psd.soleid
+	                   from pf_sys_datadictionary psd
+	                  where psd.costvalue = 'CallType')
+	            and psc.childcostvalue = pgr.CallType) callType,
+	    to_char(pgr.create_date, 'yyyyMMDDHHMMss') callDate,
+	    pgr.feedback_date recordDate
+	    from pf_gzmobile_record pgr
+	    where 1=1
+		and pgr.appid =#{applicationId,jdbcType=VARCHAR}
+	    order by pgr.create_date desc
+	    ) where rownum = 1
+	</select>
+
+	<select id="queryGZMobileRecordList" parameterType="GZMobileRecord"
+		resultType="GZMobileRecord">
+		select * from(select a.*,rownum r from((
+		select
+		pgr.appid applicationId,
+		pgr.appname userName,
+		pgr.idno identityCard,
+		pgr.mobile_no,
+		pgr.authentication,
+		pgr.access_conditions,
+		pgr.net_age,
+		pgr.last_three_months,
+		pgr.brand,
+		(case pgr.is_effective
+		when '9' then
+		'未查到数据'
+		when '0' then
+		'查询失败'
+		when '1' then
+		'查询成功'
+		end) AS isEffective,
+		(case pgr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+       end) AS flag,
+		(select psc.childclause
+            from pf_sys_child_datadictionary psc
+           where psc.fatherid =
+                 (select psd.soleid
+                    from pf_sys_datadictionary psd
+                   where psd.costvalue = 'CallType')
+             and psc.childcostvalue = pgr.CallType) callType,
+		to_char(pgr.create_date, 'yyyyMMDDHHMMss') callDate,
+		pgr.feedback_date recordDate
+		from pf_gzmobile_record pgr
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(pgr.create_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and pgr.feedback_date &gt;= replace(#{startReturnDate},'-')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(pgr.create_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and pgr.feedback_date &lt;= replace(#{endReturnDate},'-')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and pgr.appid =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pgr.idno like
+			'%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and pgr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and pgr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pgr.calltype = #{callType,jdbcType=VARCHAR}
+		</if>
+		) a))
+		WHERE r &gt; #{startRow} AND rownum &lt;= #{pageSize}
+
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+	
+	<select id="selectGZMobileRecordCount" parameterType="GZMobileRecord" resultType="int">
+		select count(1) from pf_gzmobile_record pgr
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(pgr.create_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and pgr.feedback_date &gt;= replace(#{startReturnDate},'-')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(pgr.create_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and pgr.feedback_date &lt;= replace(#{endReturnDate},'-')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and pgr.appid =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pgr.idno like
+			'%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and pgr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and pgr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pgr.calltype = #{callType,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+</mapper>

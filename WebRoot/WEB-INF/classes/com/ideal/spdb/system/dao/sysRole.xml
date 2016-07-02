@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sysRole">
+	<insert id="addRole" parameterType="SysRoleModel">
+		INSERT INTO pf_sys_role(
+		soleid,
+		roleName,
+		createDate,
+		roleDescribe,
+		foreground
+		)
+		VALUES(
+		#{soleId},
+		#{roleName},
+		sysdate,
+		#{roleDescribe},
+		#{foreground}
+		)
+	</insert>
+	<insert id="addRoleRes" parameterType="SysRoleResourceModel">
+		INSERT INTO
+		pf_sys_role_resource(soleId,roleId,resourceId,createTime)
+		VALUES
+		(#{soleId},#{roleId},#{resourceId},sysdate)
+	</insert>
+	<insert id="addRoleAut" parameterType="SysOperateAuthorityModel">
+		INSERT INTO
+		pf_sys_operate_authority(soleId,childnodeId,authority,roleId,createTime)
+		VALUES
+		(#{soleId},#{childnodeId},#{authority},#{roleId},sysdate)
+	</insert>
+	<select id="checkForeRoleName" parameterType="SysRoleModel"
+		resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_sys_role t
+		WHERE t.foreground=1 and t.roleName=#{roleName}
+	</select>
+	<select id="checkBackRoleName" parameterType="SysRoleModel"
+		resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_sys_role t
+		WHERE t.foreground=0 and t.roleName=#{roleName}
+	</select>
+	<select id="sysQueryRole" parameterType="SysRoleModel"
+		resultType="SysRoleModel">
+		SELECT * FROM(SELECT a.*,rownum r
+		FROM(SELECT t.soleid
+		soleId,t.rolename
+		roleName,TO_CHAR(t.createdate,'yyyy-mm-dd
+		hh24:mi:ss') createDate,
+		t.roledescribe roleDescribe
+		from pf_sys_role t
+		WHERE 1=1
+		<if test="roleName!=null and roleName!=''">
+			AND t.rolename=#{roleName}
+           </if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.createdate &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.createdate &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</if>
+		<if test="foreground!=null and foreground!=''">
+			and	t.foreground=#{foreground}
+		</if>
+		order by t.createdate desc
+		)
+		a )WHERE r &gt; #{startRow} AND rownum
+		&lt;= #{pageSize}
+		<if test="orderFieldName==null">
+			ORDER BY soleId DESC
+	    </if>
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	       </if>
+		</if>
+	</select>
+	<select id="sysQueryRoleCount" parameterType="SysRoleModel"
+		resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_sys_role t
+		WHERE 1=1
+		<if test="roleName!=null and roleName!=''">
+			AND t.rolename=#{roleName}
+           </if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.createdate &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.createdate &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</if>
+		<if test="foreground!=null and foreground!=''">
+			and	t.foreground=#{foreground}
+		</if>
+	</select>
+	<select id="getPadAllRole" parameterType="SysRoleModel" resultType="SysRoleModel">
+		SELECT t.soleid soleId,
+		t.rolename roleName,
+		TO_CHAR(t.createdate,'yyyy-mm-dd hh24:mi:ss') createDate,
+		t.roledescribe roleDescribe
+		from pf_sys_role t where t.foreground = 1
+		order by t.createdate desc
+	</select>
+	<select id="getUserAllRole" parameterType="SysRoleModel" resultType="SysRoleModel">
+		SELECT t.soleid soleId,
+		t.rolename roleName,
+		TO_CHAR(t.createdate,'yyyy-mm-dd hh24:mi:ss') createDate,
+		t.roledescribe roleDescribe
+		from pf_sys_role t where t.foreground = 0
+		order by t.createdate desc
+	</select>
+	
+	<select id="getUserAllRole2" parameterType="SysRoleModel" resultType="SysRoleModel">
+		SELECT t.soleid soleId,
+		t.rolename roleName,
+		TO_CHAR(t.createdate,'yyyy-mm-dd hh24:mi:ss') createDate,
+		t.roledescribe roleDescribe
+		from pf_sys_role t where t.foreground = 0 and  t.rolename  like '检件%' or t.rolename  like '补件%'
+		order by t.createdate desc
+	</select>
+	
+	
+	<select id="queryFathernodeResource" parameterType="map"
+		resultType="SysFathernodeResourceModel">
+		SELECT t.soleid soleId,
+		t.fathernodename fathernodeName,
+		t.column_3 column3,
+		TO_CHAR(t.createtime,'yyyy-mm-dd hh24:mi:ss')createTime
+		FROM
+		pf_sys_fathernode_resource t
+		WHERE 1=1
+		<if test="roleId!=null and roleId!=''">
+			AND EXISTS(SELECT t1.resourceid FROM pf_sys_role_resource
+			t1 WHERE
+			t.soleid=t1.resourceid AND
+			t1.roleid=#{roleId})
+		</if>
+		ORDER BY t.soleid
+	</select>
+	<select id="queryChildnodeResource" parameterType="map"
+		resultType="SysChildnodeResourceModel">
+		SELECT
+		t.soleid soleId,
+		t.systemurl systemUrl,
+		t.fathernodeid fathernodeId,
+		TO_CHAR(t.createtime,'yyyy-mm-dd hh24:mi:ss')createTime,
+		t.modulename moduleName
+		FROM pf_sys_childnode_resource t
+		WHERE 1=1
+		<if test="roleId!=null and roleId!=''">
+			AND EXISTS(SELECT t1.resourceid FROM pf_sys_role_resource
+			t1 WHERE
+			t.soleid=t1.resourceid AND
+			t1.roleid=#{roleId})
+		</if>
+		ORDER BY t.soleid
+	</select>
+	<select id="queryAuthorityResource" parameterType="map"
+		resultType="SysAuthorityResourceModel">
+		SELECT t.soleid soleId,
+		t.authoritycode authorityCode,
+		t.authorityname authorityName,
+		t.childnodeid childnodeId,
+		t.buttonInfo buttonInfo,
+		TO_CHAR(t.createtime,'yyyy-mm-dd hh24:mi:ss')createTime
+		FROM pf_sys_authority_resource t
+		WHERE 1=1
+		<if test="roleId!=null and roleId!=''">
+			AND EXISTS(SELECT t1.authority FROM
+			pf_sys_operate_authority t1 WHERE t.authoritycode=t1.authority AND t.childnodeid=t1.childnodeid AND
+			t1.roleid=#{roleId})
+		</if>
+		<if test="childnodeId!=null and childnodeId!=''">
+			AND EXISTS(SELECT t1.authority FROM
+			pf_sys_operate_authority t1 WHERE t.authoritycode=t1.authority AND t.childnodeid=t1.childnodeid AND
+			t1.childnodeid=#{childnodeId})
+		</if>
+		ORDER BY t.soleid
+	</select>
+	<select id="findByRole" parameterType="SysRoleModel" resultType="SysRoleModel">
+		SELECT
+		t.soleid soleId,
+		t.rolename roleName,
+		TO_CHAR(t.createdate,'yyyy-mm-dd hh24:mi:ss') createDate,
+		t.roledescribe roleDescribe
+		from pf_sys_role t
+		WHERE 1=1
+		<if test="soleId!=null and soleId!=''">
+			AND t.soleId=#{soleId}
+		</if>
+	</select>
+	<delete id="remvoeRoleMod" parameterType="java.util.List">
+		DELETE FROM pf_sys_role_resource t WHERE t.roleId
+		IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	<delete id="remvoeRoleOpe" parameterType="java.util.List">
+		DELETE FROM pf_sys_operate_authority t WHERE t.roleId
+		IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	<delete id="remvoeRole" parameterType="java.util.List">
+		DELETE FROM pf_sys_role t WHERE t.soleId
+		IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	<delete id="deleteUserRole" parameterType="java.util.List">
+		DELETE FROM pf_sys_userrole t
+		WHERE t.roleId IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	<delete id="deleteUser" parameterType="java.util.List">
+		DELETE FROM pf_sys_user t
+		WHERE EXISTS (SELECT t1.userid
+		FROM pf_sys_userrole t1
+		WHERE t.soleid = t1.userid
+		AND t1.roleId IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+		)
+	</delete>
+	<update id="updateRole" parameterType="SysRoleModel">
+		UPDATE pf_sys_role t SET
+		t.roleName=#{roleName},t.roleDescribe=#{roleDescribe} WHERE
+		t.soleId=#{soleId}
+    </update>
+    <select id="judgeDelete" parameterType="SysRoleModel" resultType="int">
+		select count(1) from pf_sys_userrole where roleId = #{soleId}
+    </select>
+    <select id="querySystemUrl" parameterType="SysRoleModel" resultType="SysRoleModel">
+    	select * from(
+		select t2.systemurl 
+		from pf_sys_role_resource t1 
+		inner join 
+		pf_sys_childnode_resource t2 
+		on t1.resourceid = t2.soleid 
+		where 1=1 
+		<if test="soleId!=null and soleId!=''">
+			and t1.roleid = #{soleId}
+		</if>
+		)
+	</select>
+	<select id="queryAllChildnodeResource" parameterType="SysRoleModel" resultType="SysRoleModel">
+    	select systemUrl from pf_sys_childnode_resource
+	</select>
+</mapper>

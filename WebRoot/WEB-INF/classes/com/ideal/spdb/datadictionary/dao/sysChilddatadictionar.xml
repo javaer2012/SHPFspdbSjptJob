@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sysChilddatadictionar">
+	<select id="queryChilddatadictionar" parameterType="SysChilddatadictionarModel"
+		resultType="SysChilddatadictionarModel">
+		SELECT * FROM(SELECT a.*,rownum r FROM(
+		SELECT t.soleid soleId,
+		t.fatherid fatherId,
+    	d.costvalue as fatherName,
+		t.childcategorys childCategorys,
+		t.childcategoryDescribe childCategoryDescribe,
+		t.childclause childClause,
+		t.childcostvalue childCostValue,
+		TO_CHAR(t.childcreatetime,'yyyy-mm-dd
+		hh24:mi:ss') childCreateTime
+		FROM
+		pf_sys_child_datadictionary t 
+		left join pf_sys_datadictionary d 
+		on d.soleid=t.fatherid
+		WHERE 1=1 
+		<if test="fatherId!=null and fatherId!=''">
+			AND t.fatherid=#{fatherId}
+		</if>
+		<if test="childCostValue!=null and childCostValue!=''">
+			AND t.childcostvalue=#{childCostValue}
+		</if>
+		<if test="childClause!=null and childClause!=''">
+			AND t.childclause like '%'||#{childClause}||'%'
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.childcreatetime &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.childcreatetime &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</if>
+		order by d.costvalue
+		)
+		a )WHERE r &gt; #{startRow} AND rownum
+		&lt;= #{pageSize}
+		<if test="orderFieldName==null">
+			ORDER BY childcostvalue
+	    </if>
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	       </if>
+		</if>
+	</select>
+
+	<select id="queryChilddatadictionarCount" parameterType="SysChilddatadictionarModel"
+		resultType="int">
+		SELECT COUNT(1)FROM pf_sys_child_datadictionary t
+		WHERE 1=1
+		<if test="fatherId!=null and fatherId!=''">
+			AND t.fatherid=#{fatherId}
+		</if>
+		<if test="childCategorys!=null and childCategorys!=''">
+			AND t.childcategorys=#{childCategorys}
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.childcreatetime &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.childcreatetime &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+		</if>
+	</select>
+	<insert id="addChilddatadictionar" parameterType="SysChilddatadictionarModel">
+		INSERT INTO
+		pf_sys_child_datadictionary
+		(soleId,
+		fatherid,
+		childcategorys,
+		childclause,
+		childcostValue,
+		childcreateTime,
+		childcategoryDescribe)
+		VALUES(
+		#{soleId},
+		#{fatherId},
+		#{childCategorys},
+		#{childClause},
+		#{childCostValue},
+		sysdate,
+		#{childCategoryDescribe}
+		)
+	</insert>
+	<select id="findByChilddatadictionar" parameterType="SysChilddatadictionarModel"
+		resultType="SysChilddatadictionarModel">
+		SELECT 
+			t.soleid soleId,
+			t.fatherid fatherId,
+			t.childcategorys childCategorys,
+			t.childcategoryDescribe childCategoryDescribe,
+			t.childclause childClause,
+			t.childcostvalue childCostValue,
+			TO_CHAR(t.childcreatetime,'yyyy-mm-dd
+			hh24:mi:ss') childCreateTime
+
+		FROM
+		    pf_sys_child_datadictionary t
+		WHERE t.soleId=#{soleId}
+	</select>
+	<update id="editChilddatadictionar" parameterType="SysChilddatadictionarModel">
+		UPDATE pf_sys_child_datadictionary t
+	     SET 
+			t.fatherid=#{fatherId},
+			t.childcategorys=#{childCategorys},
+			t.childcategoryDescribe=#{childCategoryDescribe},
+			t.childclause=#{childClause},
+			t.childcostValue=#{childCostValue}
+		WHERE t.soleId=#{soleId}
+	</update>
+		<delete id="deleteChilddatadictionar" parameterType="java.util.List">
+		DELETE FROM pf_sys_child_datadictionary t
+		WHERE t.soleid IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	<select id="queryAllProvince" parameterType="SysDatadictionarModel"
+		resultType="SysDatadictionarModel">
+	select t.proid costValue, t.proname clause
+  from pf_data_province t
+ order by t.prosort
+
+	</select>
+	<parameterMap  id="INOUT_PM" type="map" >  
+        <parameter property="in_subsystem_id" jdbcType="VARCHAR" javaType="String" mode="IN"/>  
+        <parameter property="out_system_seq" jdbcType="VARCHAR" javaType="String" mode="OUT"/>  
+   </parameterMap> 
+	<select id="sysChilddatadictionar.getSequenceValue"   statementType="CALLABLE" parameterMap="INOUT_PM" resultType="map">
+	  {call pf_proc_system_seq.create_system_seq(
+	  ?,?
+	 )}  
+	</select>
+	<select id="checkChildDatadictionar" parameterType="SysChilddatadictionarModel" resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_sys_child_datadictionary t
+		WHERE 1=1
+		<if test="null!=fatherId and fatherId!=''">
+		AND t.fatherId=#{fatherId}
+		</if>
+		<if test="null!=childClause and childClause!=''">
+		AND t.childclause=#{childClause}
+		</if>
+		<if test="null!=childCostValue and childCostValue!=''">
+		AND t.childcostvalue=#{childCostValue}
+		</if>
+		<if test="null!=fatherId and fatherId!=''">
+		AND t.fatherid=#{fatherId}
+		</if>
+		<if test="null!=soleId and soleId!=''">
+		AND t.soleid!=#{soleId}
+		</if>
+    </select>
+</mapper>

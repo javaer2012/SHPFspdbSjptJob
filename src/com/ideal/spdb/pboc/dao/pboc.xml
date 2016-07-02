@@ -1,0 +1,773 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pboc">
+	<select id="selectUserCount" parameterType="string" resultType="int">
+		select count(0)
+		from pf_sys_user
+		where state='1' and username=#{username,jdbcType=VARCHAR}
+	</select>
+	
+	<select id="selectAppliction" parameterType="PbocModel" resultType="PbocModel">
+		select 
+			applicationId,
+			shenqingshucode,
+			shenqingrenzhongwenminchen,
+			shenqingrencardtype,
+			shengqingrencardnumber
+		from pf_application
+		where shenqingshucode = #{shenqingshucode,jdbcType=VARCHAR}
+	</select>
+	
+	<insert id="addApplicationInfoById" parameterType="PbocModel">
+		insert into pf_application
+  		(applicationid,
+  		 shenqingshucode, 
+  		<if test="shenqingrenzhongwenminchen!=null and shenqingrenzhongwenminchen!=''">
+			shenqingrenzhongwenminchen,
+		</if>
+		<if test="shenqingrencardtype!=null and shenqingrencardtype!=''">
+			shenqingrencardtype,
+		</if>
+  		<if test="shengqingrencardnumber!=null and shengqingrencardnumber!=''">
+			shengqingrencardnumber,
+		</if>
+		processType
+  		)
+		values
+		('WX'||lpad(PF_APPRLETTER_ID_SEQ.Nextval, 8, '0')||'01' ,#{shenqingshucode,jdbcType=VARCHAR},
+		<if test="shenqingrenzhongwenminchen!=null and shenqingrenzhongwenminchen!=''">
+			#{shenqingrenzhongwenminchen,jdbcType=VARCHAR},
+		</if>
+		<if test="shenqingrencardtype!=null and shenqingrencardtype!=''">
+			#{shenqingrencardtype,jdbcType=VARCHAR},
+		</if>
+  		<if test="shengqingrencardnumber!=null and shengqingrencardnumber!=''">
+			#{shengqingrencardnumber,jdbcType=VARCHAR},
+		</if>
+		#{queryType,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<insert id="addPbocProcee" parameterType="PbocModel">
+		insert into pf_process
+	    (process_id,
+	    application_id,
+	    flow,
+	    process_finish,
+		is_check,
+		flag,
+		create_date,
+		time_stamp)
+		values
+	  	(pf_process_seq.nextval,
+	  	#{shenqingshucode,jdbcType=VARCHAR},
+	  	'00000000001',
+	  	'11111111110', 
+	  	null,
+	  	'2',
+	    sysdate,
+	    null)
+	</insert>
+	
+	
+	<insert id="pboc.addPbocFaild" parameterType="PbocModel">
+		insert into pf_pboc_fail(
+			id,
+			shenqingshucode,
+			shenqingrenzhongwenminchen,
+			shenqingrencardtype,
+			shengqingrencardnumber,
+			errMsg,
+			createtime,
+			queryType,
+			session_user,
+			grant_user
+		)
+		VALUES(
+			PF_PBOC_FAILD_SEQ.nextval,
+			#{shenqingshucode,jdbcType=VARCHAR},
+			#{shenqingrenzhongwenminchen,jdbcType=VARCHAR},
+			#{shenqingrencardtype,jdbcType=VARCHAR},
+			#{shengqingrencardnumber,jdbcType=VARCHAR},
+			#{errMsg,jdbcType=VARCHAR},
+			sysdate,
+			#{queryType,jdbcType=VARCHAR},
+			#{operName,jdbcType=VARCHAR},
+			#{username,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<select id="pboc.selectErrorReport" parameterType="PbocModel" resultType="PbocModel">
+		select *from (
+		select rownum r, a.*from (
+			select pf.ID,
+				   pf.SHENQINGSHUCODE,
+				   pf.SHENQINGRENZHONGWENMINCHEN,
+				   get_split_reason(pf.SHENQINGRENCARDTYPE,'ETHNC','-') SHENQINGRENCARDTYPE,
+				   pf.SHENGQINGRENCARDNUMBER,
+				   to_char(pf.CREATETIME,'yyyy-mm-dd') createtime,
+				   pf.ERRMSG
+			from pf_pboc_fail pf
+			left join (
+			     select pd.childclause,pd.childcostvalue from pf_sys_child_datadictionary pd 
+			     left join pf_sys_datadictionary ps on ps.soleid = pd.fatherid
+			     where ps.costvalue='ETHNC'
+			)t on t.childcostvalue=pf.shenqingrencardtype
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.CREATETIME,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.CREATETIME,'yyyy-mm-dd')
+			</if>
+			order by to_number(ID) desc
+		) a) c
+		WHERE c.r &gt;#{startRow} AND rownum &lt;= #{pageSize}
+		order by ID desc
+	</select>
+	
+	<select id="pboc.selectErrorReportCount" parameterType="PbocModel" resultType="int">
+	
+		select count(1)
+		from (
+			select pf.SHENQINGSHUCODE,
+				   pf.SHENQINGRENZHONGWENMINCHEN,
+				   pf.SHENQINGRENCARDTYPE,
+				   pf.SHENGQINGRENCARDNUMBER,
+				   pf.CREATETIME,
+				   pf.ERRMSG
+			from pf_pboc_fail pf
+			left join (
+			     select pd.childclause,pd.childcostvalue from pf_sys_child_datadictionary pd 
+			     left join pf_sys_datadictionary ps on ps.soleid = pd.fatherid
+			     where ps.costvalue='ETHNC'
+			)t on t.childcostvalue=pf.shenqingrencardtype
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.CREATETIME,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.CREATETIME,'yyyy-mm-dd')
+			</if>
+		)temp
+	</select>
+	
+	<!-- 错误数据导出 -->
+	<select id="exportErrorReport" parameterType="PbocModel"
+		resultType="PbocModel">
+		select
+		     ID,
+			 SHENQINGSHUCODE,
+			 SHENQINGRENZHONGWENMINCHEN,
+			 SHENQINGRENCARDTYPE,
+			 SHENGQINGRENCARDNUMBER,
+			 CREATETIME,
+			 ERRMSG
+		from(
+	      select a.*,rownum r FROM(
+		  select   
+		  		   pf.ID,
+		  		   pf.SHENQINGSHUCODE,
+				   pf.SHENQINGRENZHONGWENMINCHEN,
+				   get_split_reason(pf.SHENQINGRENCARDTYPE,'ETHNC','-') SHENQINGRENCARDTYPE,
+				   pf.SHENGQINGRENCARDNUMBER,
+				   to_char(pf.CREATETIME,'yyyy-mm-dd') createtime,
+				   pf.ERRMSG
+			from pf_pboc_fail pf
+			left join (
+			     select pd.childclause,pd.childcostvalue from pf_sys_child_datadictionary pd 
+			     left join pf_sys_datadictionary ps on ps.soleid = pd.fatherid
+			     where ps.costvalue='ETHNC'
+			)t on t.childcostvalue=pf.shenqingrencardtype
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.CREATETIME,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.CREATETIME,'yyyy-mm-dd')
+			</if>
+			order by to_number(ID) desc
+		)a where rownum &lt;= #{endRecord}
+		) where r &gt;= #{beginRecord}
+	</select>
+	
+	<update id="editApplicationInfoById" parameterType="pbocModel">
+		update pf_application 
+		set
+		    shenqingrenzhongwenminchen=#{shenqingrenzhongwenminchen,jdbcType=VARCHAR},
+		    shenqingrencardtype=#{shenqingrencardtype,jdbcType=VARCHAR},
+		    shengqingrencardnumber=#{shengqingrencardnumber,jdbcType=VARCHAR},
+		    processtype='2'
+		where shenqingshucode=#{shenqingshucode,jdbcType=VARCHAR}
+	</update>
+	
+	
+	<select id="pboc.selectQueryReport" parameterType="PbocModel" resultType="PbocModel">
+		select 
+		   c.id,
+	       c.appid SHENQINGSHUCODE,
+	       c.appname SHENQINGRENZHONGWENMINCHEN,
+	       c.IDNO SHENGQINGRENCARDNUMBER,
+	       get_split_reason(c.CARD_TYPE, 'ETHNC', '-') SHENQINGRENCARDTYPE,
+	       get_split_reason(c.CALL_TYPE, 'PBOC_QUERY_TYPE', '-') queryType,
+	       c.SESSION_USER operName,
+	       to_char(c.importdate, 'yyyy-mm-dd hh24:mi:ss') createtime,
+	       c.session_ip,
+	       decode(c.location,'1','本地库','2','人行','3','总行') is_local,
+	       c.grant_user username
+		from (
+		select rownum r, a.*from (
+			select *
+     		from pf_pboc_process_report pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.importdate,'yyyy-mm-dd') &gt;=#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.importdate,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+			<if test="is_local!=null and is_local!=''">
+				AND pf.location=#{is_local}
+			</if>
+			order by to_number(id) desc
+		) a
+		) c
+		WHERE c.r &gt;#{startRow} AND rownum &lt;= #{pageSize}
+		order by to_number(id) desc
+	</select>
+	
+	<select id="pboc.selectQueryReportCount" parameterType="PbocModel" resultType="int">
+	
+		select count(1)
+		from (
+			select *
+     		from pf_pboc_process_report pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.importdate,'yyyy-mm-dd') &gt;=#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.importdate,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+			<if test="is_local!=null and is_local!=''">
+				AND pf.location=#{is_local}
+			</if>
+		)temp
+	</select>
+	
+	<!-- 触发查询报表导出 -->
+	<select id="exportQueryReport" parameterType="PbocModel"
+		resultType="PbocModel">
+		select
+		     c.id,
+	         c.appid SHENQINGSHUCODE,
+	         c.appname SHENQINGRENZHONGWENMINCHEN,
+	         c.IDNO SHENGQINGRENCARDNUMBER,
+	         get_split_reason(c.CARD_TYPE, 'ETHNC', '-') SHENQINGRENCARDTYPE,
+	         get_split_reason(c.CALL_TYPE,'PBOC_QUERY_TYPE','-') queryType,
+	         c.SESSION_USER operName,
+	         to_char(c.importdate,'yyyy-mm-dd hh24:mi:ss') createtime,
+	         c.session_ip,
+	         decode(c.location,'1','本地库','2','人行','3','总行') is_local,
+	         c.grant_user username
+		from(
+	      select a.*,rownum r FROM(
+				select *
+	     		from pf_pboc_process_report pf
+				where 1=1
+				<!-- 创建时间 -->
+				<if test="beginTime!=null and beginTime!=''">
+					AND TO_char(pf.importdate,'yyyy-mm-dd') &gt;=#{beginTime}
+				</if>
+				<if test="endTime!=null and  endTime!=''">
+					AND #{endTime} &gt;= TO_char(pf.importdate,'yyyy-mm-dd')
+				</if>
+				<if test="queryType!=null and  queryType!=''">
+					AND pf.CALL_TYPE=#{queryType}
+				</if>
+				<if test="shenqingshucode!=null and  shenqingshucode!=''">
+					AND pf.appid like '%'||#{shenqingshucode}||'%'
+				</if>
+				<if test="is_local!=null and is_local!=''">
+					AND pf.location=#{is_local}
+				</if>
+		 		order by to_number(id) desc
+		)a where rownum &lt;= #{endRecord}
+		)c where r &gt;= #{beginRecord}
+	</select>
+
+	<select id="pboc.selectResultReport" parameterType="PbocModel" resultType="PbocModel">
+		select 
+		   c.PBOC_ID ID,
+		   c.APPID SHENQINGSHUCODE,
+		   c.APPNAME SHENQINGRENZHONGWENMINCHEN,
+		   c.IDNO SHENGQINGRENCARDNUMBER,
+		   get_split_reason(c.CARD_TYPE,'ETHNC','-') SHENQINGRENCARDTYPE,
+		   get_split_reason(c.CALL_TYPE,'PBOC_QUERY_TYPE','-') queryType,
+		   get_split_reason(c.IS_EFFECTIVE,'PBOC_QUERY_RESULT','-') queryResult,
+		   c.SESSION_USER operName,
+		   to_char(c.RECORD_DATE,'yyyy-mm-dd hh24:mi:ss') createtime,
+		   decode(c.location,'1','本地库','2','人行','3','总行') is_local,
+		   c.session_ip,
+	       c.grant_user username
+		 from (
+		select rownum r, a.*from (
+			select *
+			from pf_pboc_record pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.RECORD_DATE,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.RECORD_DATE,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="queryResult!=null and  queryResult!=''">
+				AND pf.IS_EFFECTIVE=#{queryResult}
+			</if>
+			<if test="operName!=null and  operName!=''">
+				AND pf.SESSION_USER like '%'||#{operName}||'%'
+			</if>
+			<if test="is_local!=null and  is_local!=''">
+				AND pf.location = #{is_local}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+			order by to_number(PBOC_ID) desc
+		) a) c
+		WHERE c.r &gt;#{startRow} AND rownum &lt;= #{pageSize}
+		order by to_number(ID) desc
+	</select>
+	
+	<select id="pboc.selectResultReportCount" parameterType="PbocModel" resultType="int">
+	
+		select count(1)
+		from (
+			select *
+			from pf_pboc_record pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.RECORD_DATE,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.RECORD_DATE,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="queryResult!=null and  queryResult!=''">
+				AND pf.IS_EFFECTIVE=#{queryResult}
+			</if>
+			<if test="operName!=null and  operName!=''">
+				AND pf.SESSION_USER like '%'||#{operName}||'%'
+			</if>
+			<if test="is_local!=null and  is_local!=''">
+				AND pf.location = #{is_local}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+			
+		)temp
+	</select>
+	
+	<!-- 查询报表导出 -->
+	<select id="exportResultReport" parameterType="PbocModel"
+		resultType="PbocModel">
+		select
+		   c.PBOC_ID ID,
+ 		   c.APPID SHENQINGSHUCODE,
+		   c.APPNAME SHENQINGRENZHONGWENMINCHEN,
+		   c.IDNO SHENGQINGRENCARDNUMBER,
+		   get_split_reason(c.CARD_TYPE,'ETHNC','-') SHENQINGRENCARDTYPE,
+		   get_split_reason(c.CALL_TYPE,'PBOC_QUERY_TYPE','-') queryType,
+		   get_split_reason(c.IS_EFFECTIVE,'PBOC_QUERY_RESULT','-') queryResult,
+		   c.SESSION_USER operName,
+		   to_char(c.RECORD_DATE,'yyyy-mm-dd hh24:mi:ss') createtime,
+		   decode(c.location,'1','本地库','2','人行','3','总行') is_local,
+		   c.session_ip,
+	       c.grant_user username
+		from(
+	      select a.*,rownum r FROM(
+		 	select *
+			from pf_pboc_record pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.RECORD_DATE,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.RECORD_DATE,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="queryResult!=null and  queryResult!=''">
+				AND pf.IS_EFFECTIVE=#{queryResult}
+			</if>
+			<if test="operName!=null and  operName!=''">
+				AND pf.SESSION_USER like '%'||#{operName}||'%'
+			</if>
+			<if test="is_local!=null and  is_local!=''">
+				AND pf.location = #{is_local}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+			order by to_number(PBOC_ID) desc
+		)a where rownum &lt;= #{endRecord}
+		)c where r &gt;= #{beginRecord}
+	</select>
+	
+	
+	<insert id="insertPbocProcess" parameterType="PbocModel">
+		insert into pf_pboc_process
+  		(id,
+  		 appid, 
+  		<if test="shenqingrenzhongwenminchen!=null and shenqingrenzhongwenminchen!=''">
+			appname,
+		</if>
+		<if test="shenqingrencardtype!=null and shenqingrencardtype!=''">
+			card_type,
+		</if>
+  		<if test="shengqingrencardnumber!=null and shengqingrencardnumber!=''">
+			idno,
+		</if>
+		<if test="session_ip!=null and session_ip!=''">
+			session_ip,
+		</if>
+		importdate,
+		session_user,
+		grant_user,
+		call_type,
+		flag
+  		)
+		values
+		(PF_PBOC_PROCESS_SEQ.Nextval,
+		#{shenqingshucode,jdbcType=VARCHAR},
+		<if test="shenqingrenzhongwenminchen!=null and shenqingrenzhongwenminchen!=''">
+			#{shenqingrenzhongwenminchen,jdbcType=VARCHAR},
+		</if>
+		<if test="shenqingrencardtype!=null and shenqingrencardtype!=''">
+			#{shenqingrencardtype,jdbcType=VARCHAR},
+		</if>
+  		<if test="shengqingrencardnumber!=null and shengqingrencardnumber!=''">
+			#{shengqingrencardnumber,jdbcType=VARCHAR},
+		</if>
+		<if test="session_ip!=null and session_ip!=''">
+			#{session_ip,jdbcType=VARCHAR},
+		</if>
+		sysdate,
+		#{operName,jdbcType=VARCHAR},
+		#{username,jdbcType=VARCHAR},
+		#{queryType,jdbcType=VARCHAR},
+		'0'
+		)
+	</insert>
+	
+	
+	
+	<insert id="insertPbocReport" parameterType="PbocModel">
+		insert into pf_pboc_report
+  		(PF_PBOC_REPORT_ID,
+  		 appid, 
+  		<if test="shenqingrenzhongwenminchen!=null and shenqingrenzhongwenminchen!=''">
+			appname,
+		</if>
+		<if test="shenqingrencardtype!=null and shenqingrencardtype!=''">
+			card_type,
+		</if>
+  		<if test="shengqingrencardnumber!=null and shengqingrencardnumber!=''">
+			idno,
+		</if>
+		<if test="session_ip!=null and session_ip!=''">
+			session_ip,
+		</if>
+		importdate,
+		session_user,
+		grant_user,
+		call_type
+  		)
+		values
+		(PF_PBOC_report_SEQ.Nextval,
+		#{shenqingshucode,jdbcType=VARCHAR},
+		<if test="shenqingrenzhongwenminchen!=null and shenqingrenzhongwenminchen!=''">
+			#{shenqingrenzhongwenminchen,jdbcType=VARCHAR},
+		</if>
+		<if test="shenqingrencardtype!=null and shenqingrencardtype!=''">
+			#{shenqingrencardtype,jdbcType=VARCHAR},
+		</if>
+  		<if test="shengqingrencardnumber!=null and shengqingrencardnumber!=''">
+			#{shengqingrencardnumber,jdbcType=VARCHAR},
+		</if>
+		<if test="session_ip!=null and session_ip!=''">
+			#{session_ip,jdbcType=VARCHAR},
+		</if>
+		sysdate,
+		#{operName,jdbcType=VARCHAR},
+		#{username,jdbcType=VARCHAR},
+		#{queryType,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	
+	<select id="selectBatchStartReport" parameterType="PbocModel" resultType="PbocModel">
+		select 
+		   c.pf_pboc_report_id id,
+	       c.appid SHENQINGSHUCODE,
+	       c.appname SHENQINGRENZHONGWENMINCHEN,
+	       c.IDNO SHENGQINGRENCARDNUMBER,
+	       get_split_reason(c.CARD_TYPE, 'ETHNC', '-') SHENQINGRENCARDTYPE,
+	       get_split_reason(c.CALL_TYPE, 'PBOC_QUERY_TYPE', '-') queryType,
+	       c.SESSION_USER operName,
+	       to_char(c.importdate, 'yyyy-mm-dd hh24:mi:ss') createtime,
+	       c.session_ip,
+	       c.grant_user username
+		from (
+		select rownum r, a.*from (
+			select *
+     		from pf_pboc_report pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.importdate,'yyyy-mm-dd') &gt;=#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.importdate,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+			order by to_number(pf_pboc_report_id) desc
+		) a
+		) c
+		WHERE c.r &gt;#{startRow} AND rownum &lt;= #{pageSize}
+		order by to_number(pf_pboc_report_id) desc
+	</select>
+	
+	<select id="selectBatchStartReportCount" parameterType="PbocModel" resultType="int">
+	
+		select count(1)
+		from (
+			select *
+     		from pf_pboc_report pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.importdate,'yyyy-mm-dd') &gt;=#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.importdate,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+		)temp
+	</select>
+	
+	<!-- 触发查询报表导出 -->
+	<select id="exportBatchStartReport" parameterType="PbocModel"
+		resultType="PbocModel">
+		select
+		     c.pf_pboc_report_id id,
+	         c.appid SHENQINGSHUCODE,
+	         c.appname SHENQINGRENZHONGWENMINCHEN,
+	         c.IDNO SHENGQINGRENCARDNUMBER,
+	         get_split_reason(c.CARD_TYPE, 'ETHNC', '-') SHENQINGRENCARDTYPE,
+	         get_split_reason(c.CALL_TYPE,'PBOC_QUERY_TYPE','-') queryType,
+	         c.SESSION_USER operName,
+	         to_char(c.importdate,'yyyy-mm-dd hh24:mi:ss') createtime,
+	         c.session_ip,
+	         c.grant_user username
+		from(
+	      select a.*,rownum r FROM(
+				select *
+	     		from pf_pboc_report pf
+				where 1=1
+				<!-- 创建时间 -->
+				<if test="beginTime!=null and beginTime!=''">
+					AND TO_char(pf.importdate,'yyyy-mm-dd') &gt;=#{beginTime}
+				</if>
+				<if test="endTime!=null and  endTime!=''">
+					AND #{endTime} &gt;= TO_char(pf.importdate,'yyyy-mm-dd')
+				</if>
+				<if test="queryType!=null and  queryType!=''">
+					AND pf.CALL_TYPE=#{queryType}
+				</if>
+				<if test="shenqingshucode!=null and  shenqingshucode!=''">
+					AND pf.appid like '%'||#{shenqingshucode}||'%'
+				</if>
+		 		order by to_number(pf_pboc_report_id) desc
+		)a where rownum &lt;= #{endRecord}
+		)c where r &gt;= #{beginRecord}
+	</select>
+	
+	
+	
+	
+	<select id="selectBatchEndReport" parameterType="PbocModel" resultType="PbocModel">
+		select 
+		   c.pf_pboc_report_id ID,
+		   c.APPID SHENQINGSHUCODE,
+		   c.APPNAME SHENQINGRENZHONGWENMINCHEN,
+		   c.IDNO SHENGQINGRENCARDNUMBER,
+		   get_split_reason(c.CARD_TYPE,'ETHNC','-') SHENQINGRENCARDTYPE,
+		   get_split_reason(c.CALL_TYPE,'PBOC_QUERY_TYPE','-') queryType,
+		   get_split_reason(c.IS_EFFECTIVE,'PBOC_QUERY_RESULT','-') queryResult,
+		   c.SESSION_USER operName,
+		   to_char(c.RECORD_DATE,'yyyy-mm-dd hh24:mi:ss') createtime,
+		   decode(c.location,'1','本地库','2','人行','3','总行') is_local,
+		   c.session_ip,
+	       c.grant_user username
+		 from (
+		select rownum r, a.*from (
+			select *
+			from pf_pboc_report pf
+			where 1=1 and pf.location is not null
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.RECORD_DATE,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.RECORD_DATE,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="queryResult!=null and  queryResult!=''">
+				AND pf.IS_EFFECTIVE=#{queryResult}
+			</if>
+			<if test="operName!=null and  operName!=''">
+				AND pf.SESSION_USER like '%'||#{operName}||'%'
+			</if>
+			<if test="is_local!=null and  is_local!=''">
+				AND pf.location = #{is_local}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+			order by to_number(pf_pboc_report_id) desc
+		) a) c
+		WHERE c.r &gt;#{startRow} AND rownum &lt;= #{pageSize}
+		order by to_number(pf_pboc_report_id) desc
+	</select>
+	
+	<select id="selectBatchEndReportCount" parameterType="PbocModel" resultType="int">
+	
+		select count(1)
+		from (
+			select *
+			from pf_pboc_report pf
+			where 1=1 and pf.location is not null
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.RECORD_DATE,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.RECORD_DATE,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="queryResult!=null and  queryResult!=''">
+				AND pf.IS_EFFECTIVE=#{queryResult}
+			</if>
+			<if test="operName!=null and  operName!=''">
+				AND pf.SESSION_USER like '%'||#{operName}||'%'
+			</if>
+			<if test="is_local!=null and  is_local!=''">
+				AND pf.location = #{is_local}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+			
+		)temp
+	</select>
+	
+	<!-- 查询报表导出 -->
+	<select id="exportBatchEndReport" parameterType="PbocModel"
+		resultType="PbocModel">
+		select
+		   c.pf_pboc_report_id ID,
+ 		   c.APPID SHENQINGSHUCODE,
+		   c.APPNAME SHENQINGRENZHONGWENMINCHEN,
+		   c.IDNO SHENGQINGRENCARDNUMBER,
+		   get_split_reason(c.CARD_TYPE,'ETHNC','-') SHENQINGRENCARDTYPE,
+		   get_split_reason(c.CALL_TYPE,'PBOC_QUERY_TYPE','-') queryType,
+		   get_split_reason(c.IS_EFFECTIVE,'PBOC_QUERY_RESULT','-') queryResult,
+		   c.SESSION_USER operName,
+		   to_char(c.RECORD_DATE,'yyyy-mm-dd hh24:mi:ss') createtime,
+		   decode(c.location,'1','本地库','2','人行','3','总行') is_local,
+		   c.session_ip,
+	       c.grant_user username
+		from(
+	      select a.*,rownum r FROM(
+		 	select *
+			from pf_pboc_report pf
+			where 1=1 and pf.location is not null
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.RECORD_DATE,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.RECORD_DATE,'yyyy-mm-dd')
+			</if>
+			<if test="queryType!=null and  queryType!=''">
+				AND pf.CALL_TYPE=#{queryType}
+			</if>
+			<if test="queryResult!=null and  queryResult!=''">
+				AND pf.IS_EFFECTIVE=#{queryResult}
+			</if>
+			<if test="operName!=null and  operName!=''">
+				AND pf.SESSION_USER like '%'||#{operName}||'%'
+			</if>
+			<if test="is_local!=null and  is_local!=''">
+				AND pf.location = #{is_local}
+			</if>
+			<if test="shenqingshucode!=null and  shenqingshucode!=''">
+				AND pf.appid like '%'||#{shenqingshucode}||'%'
+			</if>
+			order by to_number(pf_pboc_report_id) desc
+		)a where rownum &lt;= #{endRecord}
+		)c where r &gt;= #{beginRecord}
+	</select>
+	
+</mapper>

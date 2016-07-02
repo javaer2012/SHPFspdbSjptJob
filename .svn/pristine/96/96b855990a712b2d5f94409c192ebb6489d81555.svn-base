@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="socialsecurity">
+
+	<!--获取社保信息列表-->
+	<select id="getNeedSocialsecurityList"  resultType="SocialsecurityModel">
+       select 
+    ps.APPID appid,
+    ps.IDNO idno,
+    ps.APPNAME appname,
+    ps.TOTAL_PAY_MONTHS totalpaymonths,
+    ps.RECENT_NORMAL_MONTH recentnormalmonth,
+    ps.ASSURE_SALARY*100 assuresalary,
+    ps.CURR_PENSION_AMOUNT*100 currpensionamount,
+    ps.RECENT_INSURE_COMPANY recentinsurecompany,
+    ps.INSURE_COMPANY_TYPE insurecompanytype,
+    ps.IMPORTDATE importdate
+               from pf_socialsecurity_record ps where 1=1  and
+                 ps.flag = '0' and ps.address = '1'
+<!--                   AND pa.STATUS = '99' -->
+	</select>
+	<!--更改上传了的信息状态-->
+	<update id="updataFlag" parameterType="SocialsecurityModel">
+	UPDATE pf_socialsecurity_record a SET a.FLAG=1 where APPID = #{appid}
+	</update>
+	<parameterMap  id="INOUT_PM" type="map" >
+	    <parameter property="in_type" jdbcType="VARCHAR" javaType="String" mode="IN"/>  
+        <parameter property="out_system_seq" jdbcType="VARCHAR" javaType="String" mode="OUT"/>  
+   </parameterMap> 
+	<select id="getSequenceValue"   statementType="CALLABLE" parameterMap="INOUT_PM" resultType="map">
+	  {call pf_checkinfo_seq.create_checkinfo_seq(?,?)}  
+	</select>
+	
+	
+</mapper>

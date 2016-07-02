@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="bairong">
+	<select id="bairong.selectResultReport" parameterType="bairongModel" resultType="bairongModel">
+		select 
+			 c.BAIRONG_ID,
+			 c.user_name userName,
+		     c.application_id applicationId,
+		     c.identity_card identityCard,
+		     c.score,
+		     decode(c.results,'1','失败','0','成功','2','查询成功未查到数据') results,
+	       	 decode(c.isInstinct,'1','已导入','0','未导入') isInstinct,
+	         c.rating,
+	         c.ruleresult,
+	         get_split_reason(c.calltype,'ZMXY_QUERY_TYPE','-') callType ,
+	         to_char(c.call_date,'yyyy-mm-dd') call_date,
+		     to_char(c.record_date,'yyyy-mm-dd') record_date
+		 from (
+		select rownum r, a.*from (
+			select *
+			from pf_bairong_record pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.call_date,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.call_date,'yyyy-mm-dd')
+			</if>
+			<if test="beginTime2!=null and beginTime2!=''">
+				AND TO_char(pf.record_date,'yyyy-mm-dd') &gt;=
+				#{beginTime2}
+			</if>
+			<if test="endTime2!=null and  endTime2!=''">
+				AND #{endTime2} &gt;= TO_char(pf.record_date,'yyyy-mm-dd')
+			</if>
+			
+			<if test="applicationId!=null and  applicationId!=''">
+				AND pf.application_id like '%'||#{applicationId}||'%'
+			</if>
+			<if test="identityCard!=null and identityCard!=''">
+				AND pf.identity_card like '%'||#{identityCard}||'%'
+			</if>
+			<if test="results!=null and results!=''">
+				AND pf.results = #{results}
+			</if>
+			<if test="callType!=null and callType!=''">
+				AND pf.callType = #{callType}
+			</if>
+			order by to_number(BAIRONG_ID) desc
+		) a) c
+		WHERE c.r &gt;#{startRow} AND rownum &lt;= #{pageSize}
+		order by to_number(BAIRONG_ID) desc
+	</select>
+	
+	<select id="bairong.selectResultReportCount" parameterType="bairongModel" resultType="int">
+	
+		select count(1)
+		from (
+			select *
+			from pf_bairong_record pf
+			where 1=1
+			<!-- 创建时间 -->
+			<if test="beginTime!=null and beginTime!=''">
+				AND TO_char(pf.call_date,'yyyy-mm-dd') &gt;=
+				#{beginTime}
+			</if>
+			<if test="endTime!=null and  endTime!=''">
+				AND #{endTime} &gt;= TO_char(pf.call_date,'yyyy-mm-dd')
+			</if>
+			<if test="beginTime2!=null and beginTime2!=''">
+				AND TO_char(pf.record_date,'yyyy-mm-dd') &gt;=
+				#{beginTime2}
+			</if>
+			<if test="endTime2!=null and  endTime2!=''">
+				AND #{endTime2} &gt;= TO_char(pf.record_date,'yyyy-mm-dd')
+			</if>
+			
+			<if test="applicationId!=null and  applicationId!=''">
+				AND pf.application_id like '%'||#{applicationId}||'%'
+			</if>
+			<if test="identityCard!=null and identityCard!=''">
+				AND pf.identity_card like '%'||#{identityCard}||'%'
+			</if>
+			<if test="results!=null and results!=''">
+				AND pf.results = #{results}
+			</if>
+			<if test="callType!=null and callType!=''">
+				AND pf.callType = #{callType}
+			</if>
+		)temp
+	</select>
+	
+	<select id="querBairongByApplicationId" parameterType="bairongModel" resultType="bairongModel">
+		select result_json json from (
+			select result_json from pf_bairong_record
+			where application_id= #{applicationId,jdbcType=VARCHAR} and results='0'
+			order by create_time desc
+		) where rownum=1
+	</select>
+	
+	<select id="queryBairong2Crm" parameterType="bairongModel" resultType="bairongModel">
+		select application_id applicationId,
+		       identity_card identityCard,
+		       mobile,
+		       email,
+		       user_name userName,
+		       gid,
+		       to_char(call_date,'yyyy-MM-dd hh24:mi:ss') call_date,
+		       result_json json
+		from pf_bairong_record where create_time &gt; trunc(sysdate-1) and create_time &lt; trunc(sysdate) and results=0 order by create_time desc
+	</select>
+	
+</mapper>

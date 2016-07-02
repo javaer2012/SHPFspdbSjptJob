@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="socialInsurance" >
+
+	<select id="quertSocialInsuranceByAPPID" parameterType="SocialInsuranceModel" resultType="SocialInsuranceModel">
+		select appid,
+       idno,
+       appname,
+       total_pay_months totalPayMonths,
+       recent_normal_month recentNormalMonth,
+       assure_salary assureSalary,
+       curr_pension_amount currPensionAmount,
+       recent_insure_company recentInsureCompany,
+       insure_company_type insureCompanyType,
+       importdate,
+       is_effective isEffective,
+       address,
+       (case psr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+       end) AS flag,
+       (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = psr.outtype) outtype,
+          CALL_DATE CALLDATE,
+          RECORD_DATE RECORDDATE
+  from pf_socialsecurity_record psr where 
+  RECORD_DATE = (select max(RECORD_DATE) from pf_socialsecurity_record where appid=psr.appid)
+  and psr.appid = #{appid}
+	</select>
+
+	<select id="querySocialInsuranceList" parameterType="SocialInsuranceModel" resultType="SocialInsuranceModel">
+		select * from(select a.*,rownum r from((select appid,
+       idno,
+       appname,
+       total_pay_months totalPayMonths,
+       recent_normal_month recentNormalMonth,
+       assure_salary assureSalary,
+       curr_pension_amount currPensionAmount,
+       recent_insure_company recentInsureCompany,
+       insure_company_type insureCompanyType,
+       importdate,
+       (case psr.is_effective
+         when '1' then
+          '未查到数据'
+         when '2' then
+          '查询失败'
+         when '0' then
+          '查询成功'
+       end) AS isEffective,
+       address,
+       (case psr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+       end) AS flag,
+       (case outtype when '0' then '线下' when '1' then 'EUC批量' when '2' then '手工单笔'  when '3' then '线上'end) as outtype ,
+          CALL_DATE CALLDATE,
+          RECORD_DATE RECORDDATE,
+          is_local
+  from pf_socialsecurity_record psr
+	where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(psr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(psr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(psr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(psr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and psr.appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and psr.idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and psr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and psr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="outtype!=null and outtype!=''">
+			and psr.outtype = #{outtype,jdbcType=VARCHAR}
+		</if>
+		<if test="address!=null and address!=''">
+			and psr.address = #{address,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and psr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		) a))
+		WHERE r &gt; #{startRow} AND rownum &lt;= #{pageSize}
+
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+	
+	<select id="selectSocialInsuranceListCount" parameterType="SocialInsuranceModel" resultType="int">
+		select count(1) from  pf_socialsecurity_record psr
+	where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(psr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(psr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(psr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(psr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and psr.appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and psr.idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and psr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and psr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="outtype!=null and outtype!=''">
+			and psr.outtype = #{outtype,jdbcType=VARCHAR}
+		</if>
+		<if test="address!=null and address!=''">
+			and psr.address = #{address,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and psr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="exportSocialInsuranceList" parameterType="SocialInsuranceModel" resultType="SocialInsuranceModel">
+		select * from(select a.*,rownum r from((select appid,
+       idno,
+       appname,
+       total_pay_months totalPayMonths,
+       recent_normal_month recentNormalMonth,
+       assure_salary assureSalary,
+       curr_pension_amount currPensionAmount,
+       recent_insure_company recentInsureCompany,
+       insure_company_type insureCompanyType,
+       importdate,
+       (case psr.is_effective
+         when '1' then
+          '未查到数据'
+         when '2' then
+          '查询失败'
+         when '0' then
+          '查询成功'
+       end) AS isEffective,
+       address,
+       (case psr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+       end) AS flag,
+       (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = psr.outtype) outtype,
+          CALL_DATE CALLDATE,
+          RECORD_DATE RECORDDATE,
+          (case psr.is_local
+		        when '1' then '调库'
+		         when '0' then '非调库'
+		         end
+		        ) AS is_local
+  from pf_socialsecurity_record psr
+	where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(psr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(psr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(psr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(psr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="appid!=null and appid!=''">
+			and psr.appid =#{appid,jdbcType=VARCHAR}
+		</if>
+		<if test="idno!=null and idno!=''">
+			and psr.idno like '%'||#{idno,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and psr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and psr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="outtype!=null and outtype!=''">
+			and psr.outtype = #{outtype,jdbcType=VARCHAR}
+		</if>
+		<if test="address!=null and address!=''">
+			and psr.address = #{address,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and psr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		) a))
+		WHERE 1=1
+		<if test="beginRecord!=null and beginRecord!='0'.toString()">
+			and r &gt;=#{beginRecord}
+		 </if>
+		 
+		 <if test="endRecord!=null and endRecord!='0'.toString()">
+			and r &lt;= #{endRecord}
+		 </if>
+		
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+		
+	</select>
+
+</mapper>

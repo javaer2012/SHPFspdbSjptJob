@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="callreport" >
+
+ <select id="selectCallreportList" resultType="CallReportModel" parameterType="CallReportModel" >
+ 	 select b.* from(
+	  select a.*,rownum ar from(
+	select ppl.applicationid as applicationID,
+       (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'INTERFACETYPE')
+           and psc.childcostvalue = ppl.call_type) calltype,
+      (case ppl.RESULTS
+		        when '1' then '未查到数据'
+		         when '2' then '查询失败'
+		         when '0' then '查询成功'
+		         when '调用成功' then '调用成功'
+		         else '接口调用失败'
+		         end
+		        ) AS results,
+       ppl.call_date as calldate,
+       ppl.record_date as recorddate,
+       ppl.parameters1 as parameters1,
+       ppl.parameters2 as parameters2
+  from pf_process_log ppl
+	
+	where 1=1 
+        
+        <if test="beginTime!=null and beginTime!=''">
+			and TRUNC(ppl.call_date) &gt;=
+			 TO_date(#{beginTime},'yyyy-mm-dd')
+		</if>
+		 <if test="beginTime2!=null and beginTime2!=''">
+			and TRUNC(ppl.record_date) &gt;=
+			 TO_date(#{beginTime2},'yyyy-mm-dd')
+		</if>
+		<if test="endTime!=null and endTime!=''">
+			and TRUNC(ppl.call_date) &lt;=
+			 TO_date(#{endTime},'yyyy-mm-dd')
+		</if>
+		<if test="endTime2!=null and endTime2!=''">
+			and TRUNC(ppl.record_date) &lt;=
+			 TO_date(#{endTime2},'yyyy-mm-dd')
+		</if>
+		<if test="results!=null and results!=''">
+			<if test="results== 3">
+			and ppl.RESULTS not in ('1' , '0' ,'调用成功')
+			</if>
+			<if test="results== 4">
+			and ppl.RESULTS in ('1' , '0' ,'调用成功')
+			</if>
+			<if test="results ==2 or results ==1">
+			and ppl.RESULTS = #{results,jdbcType=VARCHAR}
+			</if>
+			<if test="results ==0 ">
+				and ppl.RESULTS in (#{results,jdbcType=VARCHAR},'调用成功','4')
+			</if>
+		</if>
+		<if test="calltype!=null and calltype!=''">
+			and ppl.call_type = #{calltype,jdbcType=VARCHAR}
+		</if>
+	    ) a)b
+		 WHERE b.ar &gt; #{startRow} AND rownum
+		 &lt;= #{pageSize}
+		<if test="orderFieldName==null">
+			ORDER BY callDate
+	    </if>
+	    
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	        </if>
+		</if>
+ </select>
+ 
+ 
+  <select id="selectCallreportListCount"  parameterType="CallReportModel" resultType="int">
+	
+	select count(*)   from pf_process_log ppl
+	
+	where 1=1 
+        <if test="beginTime!=null and beginTime!=''">
+			and TRUNC(ppl.call_date) &gt;=
+			 TO_date(#{beginTime},'yyyy-mm-dd')
+		</if>
+		 <if test="beginTime2!=null and beginTime2!=''">
+			and TRUNC(ppl.record_date) &gt;=
+			 TO_date(#{beginTime2},'yyyy-mm-dd')
+		</if>
+		<if test="endTime!=null and endTime!=''">
+			and TRUNC(ppl.call_date) &lt;=
+			 TO_date(#{endTime},'yyyy-mm-dd')
+		</if>
+		<if test="endTime2!=null and endTime2!=''">
+			and TRUNC(ppl.record_date) &lt;=
+			 TO_date(#{endTime2},'yyyy-mm-dd')
+		</if>
+		<if test="results!=null and results!=''">
+			<if test="results== 3">
+			and ppl.RESULTS not in ('1' , '0' ,'调用成功')
+			</if>
+			<if test="results== 4">
+			and ppl.RESULTS in ('1' , '0' ,'调用成功')
+			</if>
+			<if test="results ==2 or results ==1">
+			and ppl.RESULTS = #{results,jdbcType=VARCHAR}
+			</if>
+			<if test="results ==0 ">
+				and ppl.RESULTS in (#{results,jdbcType=VARCHAR},'调用成功')
+			</if>
+		</if>
+		<if test="calltype!=null and calltype!=''">
+			and ppl.call_type = #{calltype,jdbcType=VARCHAR}
+		</if>
+  </select>
+  
+  
+  
+   <select id="exprotCallreportMessage" resultType="CallReportModel" 
+                                   parameterType="CallReportModel" >
+       select b.* from(
+	  select a.*,rownum ar from(
+           select ppl.applicationid as applicationID,
+       (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'INTERFACETYPE')
+           and psc.childcostvalue = ppl.call_type) calltype,
+      (case ppl.RESULTS
+		         when '1' then '未查到数据'
+		         when '2' then '查询失败'
+		         when '0' then '查询成功'
+		         when '调用成功' then '调用成功'
+		         else '接口调用失败'
+		         end
+		        ) AS results,
+       ppl.call_date as calldate,
+       ppl.record_date as recorddate,
+       ppl.parameters1 as parameters1,
+       ppl.parameters2 as parameters2
+  from pf_process_log ppl
+	
+	where 1=1 
+        
+        <if test="beginTime!=null and beginTime!=''">
+			and TRUNC(ppl.call_date) &gt;=
+			 TO_date(#{beginTime},'yyyy-mm-dd')
+		</if>
+		 <if test="beginTime2!=null and beginTime2!=''">
+			and TRUNC(ppl.record_date) &gt;=
+			 TO_date(#{beginTime2},'yyyy-mm-dd')
+		</if>
+		<if test="endTime!=null and endTime!=''">
+			and TRUNC(ppl.call_date) &lt;=
+			 TO_date(#{endTime},'yyyy-mm-dd')
+		</if>
+		<if test="endTime2!=null and endTime2!=''">
+			and TRUNC(ppl.record_date) &lt;=
+			 TO_date(#{endTime2},'yyyy-mm-dd')
+		</if>
+		<if test="results!=null and results!=''">
+			<if test="results== 3">
+			and ppl.RESULTS not in ('1' , '0' ,'调用成功')
+			</if>
+			<if test="results== 4">
+			and ppl.RESULTS in ('1' , '0' ,'调用成功')
+			</if>
+			<if test="results ==2 or results ==1">
+			and ppl.RESULTS = #{results,jdbcType=VARCHAR}
+			</if>
+			<if test="results ==0 ">
+				and ppl.RESULTS in (#{results,jdbcType=VARCHAR},'调用成功')
+			</if>
+		</if>
+		<if test="calltype!=null and calltype!=''">
+			and ppl.call_type = #{calltype,jdbcType=VARCHAR}
+		</if>                        
+		<if test="orderFieldName==null">
+			ORDER BY callDate
+	    </if>
+	    
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	        </if>
+		</if>
+		
+	    ) a)b
+	     WHERE 1=1
+		 <if test="beginRecord!=null and beginRecord!='0'.toString()">
+			and  b.ar &gt;=#{beginRecord}
+		 </if>
+		 
+		 <if test="endRecord!=null and endRecord!='0'.toString()">
+			and b.ar &lt;= #{endRecord}
+		 </if>
+  
+  </select>
+</mapper>

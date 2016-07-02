@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="juxinliBlackList" >
+	<select id="queryJuxinliBlackListInfoExport" resultType="JuxinliBlackListExportModel">
+		SELECT 'FT002' typeNo,
+	       pjr.identity_card identityCard,
+	       to_char(SYSDATE,'YYYY')||'-'||ltrim(to_char(SYSDATE,'MM'),'0')||'-'||to_char(SYSDATE,'DD')||' 0:00' operateDate,
+	       '聚信立黑名单' Detail
+	  from pf_juxinliblacklist_record pjr
+	where  to_char(pjr.call_date,'YYYYMMDD') = to_char(sysdate-1,'YYYYMMDD')
+	  and pjr.isinblacklist = 'Y'
+	</select>
+	
+	<select id="queryOutPutBlackListInfo" parameterType="JuxinliBlackListRecordModel" resultType="JuxinliBlackListRecordModel">
+<!-- 		select 1 flag,pjr.recordid recordId,pjr.identity_card || '|01|O|JXL|BAD|' || pjr.user_name || '||||||||||||' remark from pf_juxinliblacklist_record pjr  -->
+<!-- 		where pjr.iscaps = '0' -->
+<!-- 		and pjr.isinblacklist = 'Y' -->
+<!-- 		union all -->
+		select 2 flag,ppr.publicsecurity_record_id recordId,ppr.identity_card || '|01|O|GAW|BAD|' || ppr.user_name || '||||||||||||' remark from pf_publicsecurity_record ppr 
+		where ppr.iscaps = '0'
+		and (ppr.bl0 in ('BL02','BL01') or ppr.bl1 like '%BL11%' or ppr.bl1 like '%BL12%')
+		union all
+		select 3 flag,ppr.dishonestid recordId,ppr.dishonest_cardno || '|01|O|CUP|BAD|' || ppr.dishonest_name || '||||||||||||' remark from Pf_Dishonest_Record ppr 
+    where ppr.iscaps = '0'
+    		union all
+		select 4 flag,ppr.unionpayblacklist_record_id recordId,ppr.identitycard || '|01|O|CUP|BAD|' || ppr.username || '||||||||||||' remark from pf_unionpayblacklist_qrecord ppr 
+    where ppr.iscaps = '0' and ppr.retuen_result = 'Y'
+	</select>
+	
+	<update id="updateOutPutBlackListInfoStatus" parameterType="JuxinliBlackListRecordModel">
+		update 
+<!-- 		<if test="flag!=null and flag!='' and flag==1"> -->
+<!-- 			pf_juxinliblacklist_record pjr set pjr.iscaps = '1' where pjr.recordid = #{recordId} -->
+<!-- 		</if> -->
+		<if test="flag!=null and flag!='' and flag==2">
+			pf_publicsecurity_record ppr set ppr.iscaps = '1' where ppr.publicsecurity_record_id = #{recordId}
+		</if>
+		<if test="flag!=null and flag!='' and flag==3">
+			Pf_Dishonest_Record ppr set ppr.iscaps = '1' where ppr.dishonestid = #{recordId}
+		</if>
+				<if test="flag!=null and flag!='' and flag==4">
+			pf_unionpayblacklist_qrecord ppr set ppr.iscaps = '1' where ppr.unionpayblacklist_record_id = #{recordId}
+		</if>
+	</update>
+	
+	<select id="queryJuxinliBlackListRecordInfo" parameterType="JuxinliBlackListRecordModel" resultType="JuxinliBlackListRecordModel">
+		select pjr.application_id applicationId,
+       pjr.user_name userName,
+       pjr.identity_card identityCard,
+       pjr.mobiles,
+       pjr.user_mobiles,
+       pjr.isinblacklist,
+       pjr.categories,
+       pjr.blacklistmobiles,
+       pjr.blacklistaddress,
+       pjr.jierubenjin,
+       pjr.yuqitianshu,
+       pjr.blacklistupdatetime,
+       pjr.blacklistcreatetime,
+       pjr.others,
+       '0002' projetNo,
+       '聚信立黑名单' projetName,
+       (case pjr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+       end) AS flag,
+       (case pjr.is_effective
+         when '1' then
+          '未查到数据'
+         when '2' then
+          '查询失败'
+         when '0' then
+          '查询成功'
+       end) AS isEffective,
+       (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = pjr.CallType) callType,
+       to_char(pjr.call_date, 'yyyyMMDDHHMMss') callDate,
+       pjr.record_date recordDate,
+       case pjr.isinblacklist
+         when 'Y' then
+          '姓名——' || pjr.user_name || ';证件号码——' || pjr.identity_card ||
+          ';是否中黑名单——' || pjr.isinblacklist || ';来源——' || pjr.categories || ';其他——' ||
+          to_char(pjr.others) || ';'
+         when 'N' then
+          ''
+       end remark
+  from pf_juxinliblacklist_record pjr
+    where pjr.flag = '0'
+	</select>
+	
+	<update id="updateJuxinliBlackListRecordInfoStatus" parameterType="JuxinliBlackListRecordModel">
+		update pf_juxinliblacklist_record pjr set pjr.flag = #{flag} where pjr.application_id = #{applicationId}
+	</update>
+	
+	<select id="quertJuxinliBlackListRecordByAPPID" parameterType="JuxinliBlackListRecordModel" resultType="JuxinliBlackListRecordModel">
+		select * from (
+		select pjr.application_id applicationId,
+       pjr.user_name userName,
+       pjr.identity_card identityCard,
+       pjr.mobiles,
+       pjr.user_mobiles,
+       pjr.isinblacklist,
+       pjr.categories,
+       pjr.others,
+       pjr.blacklistmobiles,
+       pjr.blacklistaddress,
+       pjr.jierubenjin,
+       pjr.yuqitianshu,
+       pjr.blacklistupdatetime,
+       pjr.blacklistcreatetime,
+       (case pjr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+        end) AS flag,
+        (case pjr.is_effective
+         when '1' then
+          '未查到数据'
+         when '2' then
+          '查询失败'
+         when '0' then
+          '查询成功'
+        end) AS isEffective,
+        (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = pjr.CallType) callType,
+           pjr.call_date callDate,
+           pjr.record_date recordDate
+           
+           from pf_juxinliblacklist_record pjr
+		where 1=1 and pjr.application_id =#{applicationId,jdbcType=VARCHAR}
+		order by pjr.call_date desc
+		) where rownum = 1
+	</select>
+	
+	<select id="queryJuxinliBlackListRecordList" parameterType="JuxinliBlackListRecordModel" resultType="JuxinliBlackListRecordModel">
+		select * from(select a.*,rownum r from((
+		select pjr.application_id applicationId,
+       pjr.user_name userName,
+       pjr.identity_card identityCard,
+       pjr.mobiles,
+       pjr. user_mobiles,
+       pjr.isinblacklist,
+       pjr.categories,
+       pjr.others,
+       pjr.blacklistmobiles,
+       pjr.blacklistaddress,
+       pjr.jierubenjin,
+       pjr.yuqitianshu,
+       pjr.blacklistupdatetime,
+       pjr.blacklistcreatetime,
+       (case pjr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+        end) AS flag,
+        (case pjr.is_effective
+         when '1' then
+          '未查到数据'
+         when '2' then
+          '查询失败'
+         when '0' then
+          '查询成功'
+        end) AS isEffective,
+        (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = pjr.CallType) callType,
+           pjr.call_date callDate,
+           pjr.record_date recordDate,
+           pjr.is_local
+           
+           from pf_juxinliblacklist_record pjr
+		where 1=1
+		
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(pjr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(pjr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(pjr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(pjr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and pjr.application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pjr.identity_card like '%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and pjr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="isinblacklist!=null and isinblacklist!=''">
+			and pjr.isinblacklist = #{isinblacklist,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and pjr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pjr.CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and pjr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		) a))
+		WHERE r &gt; #{startRow} AND rownum &lt;= #{pageSize}
+
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+	
+	<select id="selectJuxinliBlackListRecordCount" parameterType="JuxinliBlackListRecordModel" resultType="int">
+		select count(1) from pf_juxinliblacklist_record pjr
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(pjr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(pjr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(pjr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(pjr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and pjr.application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pjr.identity_card like '%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and pjr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="isinblacklist!=null and isinblacklist!=''">
+			and pjr.isinblacklist = #{isinblacklist,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and pjr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pjr.CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and pjr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+	</select>
+	
+	<select id="exportJuxinliBlackList" parameterType="JuxinliBlackListRecordModel" resultType="JuxinliBlackListRecordModel">
+		select * from(select a.*,rownum r from((
+		select pjr.application_id applicationId,
+       pjr.user_name userName,
+       pjr.identity_card identityCard,
+       pjr.mobiles,
+       pjr. user_mobiles,
+       pjr.isinblacklist,
+       pjr.categories,
+       pjr.others,
+       pjr.blacklistmobiles,
+       pjr.blacklistaddress,
+       pjr.jierubenjin,
+       pjr.yuqitianshu,
+       pjr.blacklistupdatetime,
+       pjr.blacklistcreatetime,
+       (case pjr.flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+        end) AS flag,
+        (case pjr.is_effective
+         when '1' then
+          '未查到数据'
+         when '2' then
+          '查询失败'
+         when '0' then
+          '查询成功'
+        end) AS isEffective,
+        (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = pjr.CallType) callType,
+           pjr.call_date callDate,
+           pjr.record_date recordDate,
+           (case pjr.is_local
+		        when '1' then '调库'
+		         when '0' then '非调库'
+		         end
+		        ) AS is_local
+           
+           from pf_juxinliblacklist_record pjr
+		where 1=1
+		
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(pjr.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(pjr.record_Date) &gt;=
+			TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(pjr.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(pjr.record_Date) &lt;=
+			TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and pjr.application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pjr.identity_card like '%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and pjr.is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="isinblacklist!=null and isinblacklist!=''">
+			and pjr.isinblacklist = #{isinblacklist,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and pjr.flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pjr.CallType = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and pjr.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		) a))
+		WHERE 1=1
+		<if test="beginRecord!=null and beginRecord!='0'.toString()">
+			and r &gt;=#{beginRecord}
+		 </if>
+		 
+		 <if test="endRecord!=null and endRecord!='0'.toString()">
+			and r &lt;= #{endRecord}
+		 </if>
+		
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+</mapper>

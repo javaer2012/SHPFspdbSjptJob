@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="thirdInfoModel" >
+
+<select id="queryThirdInfoReportList" parameterType="ThirdInfoReportModel" resultType="ThirdInfoReportModel">
+		select * from(select a.*,rownum r from((
+		<if test="callType==1">
+			select info.record_date importDate, info.applicationid appid,
+			'北京网通个人信息：原地址—' || info.O_ADDRESS || ';原电话—' || info.O_PHONE || ';登记人名称—' || info.NAME || ';装机地址—' || info.ADDRESS || ';匹配标志—' || info.MARK_MATCHING || ';小灵通标志—' || info.PHS_SIGN || ';' thirdinfo
+			from PF_BJWT_PERSON_RECORD info
+		</if>
+		<if test="callType=='2'">
+			select info.record_date importDate, info.applicationid appid,
+			'北京网通单位信息：原单位名称—' || info.O_UNIT_NAME || ';原地址—' || info.O_UNIT_ADDRESS || ';原电话—' || info.O_UNIT_PHONE || ';单位名称—' || info.UNIT_NAME || ';单位地址—' || info.UNIT_ADDRESS || ';匹配标志—' || info.MARK_MATCHING || ';个人电话标志—' || info.PERSONAL_CALL_SIGN || ';小灵通标志—' || info.PHS_SIGN || ';' thirdinfo
+			from PF_BJWT_UNIT_RECORD info
+		</if>
+		<if test="callType=='3'">
+			select info.record_date importDate, info.applicationid appid,
+			'银联黑名单信息—' || info.RECORD_TYPE_CODE || ';姓名—' || info.USERNAME || ';证件类型—' || info.PAPER_TYPE || ';证件号码—' || info.PAPER_NUM || ';反馈结果—' || info.RETUEN_RESULT || ';命中信息类型—' || info.HIT_MESSAGE_TYPE || ';' thirdinfo
+			from PF_UNIONPAYBLACKLIST_RECORD info
+		</if>
+		<if test="callType=='4'">
+			select info.record_date importDate, info.applicationid appid,
+			'黄页个人信息：地址—' || info.ADDRESS || ';电话—' || info.PHONE || ';处理方式—' || info.OPERATE_STATE || ';营业库地址—' || info.BUSINESS_LIBRARY || ';营业库电话—' || info.BUSINESS_LIBRARY_CALLS || ';区号—' || info.AREA_CODE || ';' thirdinfo
+			from PF_YELLOWPAGE_RECORD info
+		</if>
+		<if test="callType=='5'">
+			select info.record_date importDate, info.applicationid appid,
+			'黄页单位信息：户名—' || info.UNIT_NAME || ';地址—' || info.UNIT_ADDRESS || ';电话—' || info.UNIT_PHONE || ';处理方式—' || info.OPERATE_STATE || ';副关键字—' || info.SIDEKEY || ';返回户名—' || info.RETURN_NAME || ';返回地址—' || info.RETURN_ADDRESS || ';返回电话—' || info.RETURN_PHONE || ';总机标志—' || info.OPERATOR_LOGO || ';总机地址—' || info.OPERATOR_ADDRESS || ';总机电话—' || info.TELEPHONE_SWITCHBOARD || ';分类—' || info.CLASSIFY || ';引示电话户名—' || info.YS_USERNAME || ';引示电话地址—' || info.YS_ADDRESS || ';引示电话号码—' || info.YS_PHONE || ';电话查询户名—' || info.PHONE_NAME || ';电话查询地址—' || info.PHONE_ADDRESS || ';电话查询号码—' || info.PHONE_NUM || ';区号—' || info.AREA_CODE || ';' thirdinfo
+			from PF_YELLOWPAGE_UNIT_RECORD info
+		</if>
+
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(info.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(info.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and info.identity_card like '%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="appid!=null and appid!=''">
+			and info.applicationid = '%'||#{appid,jdbcType=VARCHAR}||'%'
+		</if>
+		) a))
+		WHERE r &gt; #{startRow} AND rownum &lt;= #{pageSize}
+
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+	
+	<select id="selectPublicSecurityListCount" parameterType="ThirdInfoReportModel" resultType="int">
+		select count(1)
+		<if test="callType==1">
+			from PF_BJWT_PERSON_RECORD info
+		</if>
+		<if test="callType=='2'">
+			from PF_BJWT_UNIT_RECORD info
+		</if>
+		<if test="callType=='3'">
+			from PF_UNIONPAYBLACKLIST_RECORD info
+		</if>
+		<if test="callType=='4'">
+			from PF_YELLOWPAGE_RECORD info
+		</if>
+		<if test="callType=='5'">
+			from PF_YELLOWPAGE_UNIT_RECORD info
+		</if>
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(info.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(info.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and info.identity_card like '%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="appid!=null and appid!=''">
+			and info.applicationid = '%'||#{appid,jdbcType=VARCHAR}||'%'
+		</if>
+	</select>
+	
+	<select id="exportThirdinfoReportList" parameterType="ThirdInfoReportModel" resultType="ThirdInfoReportModel">
+		select * from(select a.*,rownum r from((
+		<if test="callType==1">
+			select info.record_date importDate, info.applicationid appid,
+			'北京网通个人信息：原地址—' || info.O_ADDRESS || ';原电话—' || info.O_PHONE || ';登记人名称—' || info.NAME || ';装机地址—' || info.ADDRESS || ';匹配标志—' || info.MARK_MATCHING || ';小灵通标志—' || info.PHS_SIGN || ';' thirdinfo
+			from PF_BJWT_PERSON_RECORD info
+		</if>
+		<if test="callType=='2'">
+			select info.record_date importDate, info.applicationid appid,
+			'北京网通单位信息：原单位名称—' || info.O_UNIT_NAME || ';原地址—' || info.O_UNIT_ADDRESS || ';原电话—' || info.O_UNIT_PHONE || ';单位名称—' || info.UNIT_NAME || ';单位地址—' || info.UNIT_ADDRESS || ';匹配标志—' || info.MARK_MATCHING || ';个人电话标志—' || info.PERSONAL_CALL_SIGN || ';小灵通标志—' || info.PHS_SIGN || ';' thirdinfo
+			from PF_BJWT_UNIT_RECORD info
+		</if>
+		<if test="callType=='3'">
+			select info.record_date importDate, info.applicationid appid,
+			'银联黑名单信息—' || info.RECORD_TYPE_CODE || ';姓名—' || info.USERNAME || ';证件类型—' || info.PAPER_TYPE || ';证件号码—' || info.PAPER_NUM || ';反馈结果—' || info.RETUEN_RESULT || ';命中信息类型—' || info.HIT_MESSAGE_TYPE || ';' thirdinfo
+			from PF_UNIONPAYBLACKLIST_RECORD info
+		</if>
+		<if test="callType=='4'">
+			select info.record_date importDate, info.applicationid appid,
+			'黄页个人信息：地址—' || info.ADDRESS || ';电话—' || info.PHONE || ';处理方式—' || info.OPERATE_STATE || ';营业库地址—' || info.BUSINESS_LIBRARY || ';营业库电话—' || info.BUSINESS_LIBRARY_CALLS || ';区号—' || info.AREA_CODE || ';' thirdinfo
+			from PF_YELLOWPAGE_RECORD info
+		</if>
+		<if test="callType=='5'">
+			select info.record_date importDate, info.applicationid appid,
+			'黄页单位信息：户名—' || info.UNIT_NAME || ';地址—' || info.UNIT_ADDRESS || ';电话—' || info.UNIT_PHONE || ';处理方式—' || info.OPERATE_STATE || ';副关键字—' || info.SIDEKEY || ';返回户名—' || info.RETURN_NAME || ';返回地址—' || info.RETURN_ADDRESS || ';返回电话—' || info.RETURN_PHONE || ';总机标志—' || info.OPERATOR_LOGO || ';总机地址—' || info.OPERATOR_ADDRESS || ';总机电话—' || info.TELEPHONE_SWITCHBOARD || ';分类—' || info.CLASSIFY || ';引示电话户名—' || info.YS_USERNAME || ';引示电话地址—' || info.YS_ADDRESS || ';引示电话号码—' || info.YS_PHONE || ';电话查询户名—' || info.PHONE_NAME || ';电话查询地址—' || info.PHONE_ADDRESS || ';电话查询号码—' || info.PHONE_NUM || ';区号—' || info.AREA_CODE || ';' thirdinfo
+			from PF_YELLOWPAGE_UNIT_RECORD info
+		</if>
+		
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(info.call_Date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(info.call_Date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and info.identity_card like '%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="appid!=null and appid!=''">
+			and info.applicationid = '%'||#{appid,jdbcType=VARCHAR}||'%'
+		</if>
+		) a))
+		WHERE 1=1
+		<if test="beginRecord!=null and beginRecord!='0'.toString()">
+			and r &gt;=#{beginRecord}
+		 </if>
+		 
+		 <if test="endRecord!=null and endRecord!='0'.toString()">
+			and r &lt;= #{endRecord}
+		 </if>
+		
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+
+</mapper>

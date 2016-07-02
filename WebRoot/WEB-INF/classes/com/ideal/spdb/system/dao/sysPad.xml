@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sysPad">
+	<select id="getUserInfo" parameterType="SysPadModel"
+		resultType="SysPadModel">
+		SELECT
+		t.soleid soleId,
+		t.username userName,
+		t2.soleid parallelismRole,
+		t2.rolename roleName,
+		t2.foreground foreground,
+		t.realname realName,
+		t.city city,
+		t.org_id orgId,
+		t.manager_no managerNo,
+		t.station,
+		t.post,
+		t.address,
+		t.tel,
+		t.email,
+		TO_CHAR(t.registerdate,'yyyy-mm-dd hh24:mi:ss') registerDate
+		FROM
+		pf_sys_user t
+		INNER JOIN pf_sys_userrole
+		t1 ON t.soleid = t1.userid
+		INNER JOIN pf_sys_role t2 ON t1.roleid = t2.soleid
+		WHERE
+		t.username=#{userName}
+		AND t.userpassword=#{userPassword}
+    </select>
+	<select id="sysUserLogin" parameterType="SysPadModel"
+		resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_sys_user t
+		WHERE
+		t.username=#{userName}
+		AND t.userpassword=#{userPassword}
+		AND t.state = 1
+		AND t.back_ground=0
+    </select>
+	<insert id="addUser" parameterType="SysPadModel">
+		INSERT INTO pf_sys_user(
+		soleId,
+		userName,
+		userPassword,
+		realName,
+		registerDate,
+		manager_no,
+		city,
+		org_id,
+		station,
+		post,
+		address,
+		tel,
+		email,
+		remark,
+		state,
+		back_ground,
+		branch_approval_code
+		)
+		VALUES(
+		#{soleId},
+		#{userName},
+		#{userPassword},
+		#{realName},
+		sysdate,
+		#{userName},
+		#{city},
+		#{orgId},
+		#{station},
+		#{post},
+		#{address},
+		#{tel},
+		#{email},
+		#{remark},
+		0,
+		0,
+		#{branchapprovalcode}
+		)
+	</insert>
+	<insert id="addUserRole" parameterType="SysPadModel">
+		INSERT INTO
+		pf_sys_userrole(soleId,
+		userId,
+		roleId,
+		createTime
+		)
+		VALUES(
+		#{userRoleId},
+		#{soleId},
+		#{parallelismRole},
+		sysdate
+		)
+	</insert>
+	<select id="queryUser" parameterType="SysPadModel" resultType="SysPadModel">
+		SELECT * FROM(SELECT a.*,rownum r FROM(
+		SELECT
+		t.soleid soleId,
+		t.username userName,
+		t.manager_no managerNo,
+		t.realname realName ,
+		t.state state ,
+    	o.org_name orgName,
+    	o.org_id orgId,
+		t1.roleid userRoleId,
+		t.branch_approval_code branchapprovalcode,
+		TO_CHAR(t.registerdate,'yyyy-mm-dd hh24:mi:ss') registerDate
+		FROM pf_sys_USER t
+		LEFT JOIN pf_sys_userrole t1
+		ON t.soleid = t1.userid
+	    LEFT JOIN pf_org o
+	    ON t.org_id = o.org_id
+		WHERE 1=1
+		AND t.state != '10'
+		AND t.back_ground = 0
+		<if test="userName!=null and userName!=''">
+			AND t.username=#{userName}
+		</if>
+		<if test="managerNo!=null and managerNo!=''">
+			AND t.manager_no=#{managerNo}
+		</if>
+		<if test="realName!=null and realName!=''">
+			AND t.realname like '%'||#{realName}||'%'
+		</if>
+		<if test="branchapprovalcode!=null and branchapprovalcode!=''">
+		    AND t.branch_approval_code like '%'||#{branchapprovalcode}||'%'
+		</if>
+		 ORDER BY t.registerdate DESC
+		)
+		a )WHERE r &gt; #{startRow} AND rownum
+		&lt;= #{pageSize}
+		<if test="orderFieldName==null">
+			ORDER BY soleId DESC
+	    </if>
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	       </if>
+		</if>
+	</select>
+	<select id="queryUserCount" parameterType="SysPadModel"
+		resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_sys_user t
+		WHERE 1=1
+		AND t.state != '10'
+		AND t.back_ground = 0
+		<if test="userName!=null and userName!=''">
+			AND t.username=#{userName}
+		</if>
+		<if test="managerNo!=null and managerNo!=''">
+			AND t.manager_no=#{managerNo}
+		</if>
+		<if test="realName!=null and realName!=''">
+			AND t.realname like '%'||#{realName}||'%'
+		</if>
+		<if test="branchapprovalcode!=null and branchapprovalcode!=''">
+		    AND t.branch_approval_code like '%'||#{branchapprovalcode}||'%'
+		</if>
+	</select>
+	<update id="deleteUser" parameterType="java.util.List">
+		UPDATE pf_sys_user t
+		SET t.state = '10' WHERE t.soleid IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</update>
+	<delete id="deleteUser2" parameterType="java.util.List">
+		DELETE FROM pf_sys_user t
+		WHERE t.soleid IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	
+	<delete id="deleteUserRole" parameterType="java.util.List">
+		DELETE FROM pf_sys_userrole t
+		WHERE t.userId IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+	<select id="findByUser" parameterType="SysPadModel" resultType="SysPadModel">
+		SELECT
+		t.soleid soleId,
+		t.username userName,
+		t.userpassword userPassword,
+		t1.roleId parallelismRole,
+		t.realname realName,
+		t.manager_no managerNo,
+		t.city city,
+		t.state state,
+		t.org_id orgId,
+		t.station station,
+		t.post post,
+		t.address address,
+		t.tel tel,
+		t.email email,
+		t.remark remark,
+		t.logout_time logoutTime,
+		t.branch_approval_code branchapprovalcode
+		FROM
+		pf_sys_user t
+		INNER JOIN pf_sys_userrole t1 ON t.soleid = t1.userid
+		WHERE
+		t.soleid=#{soleId}
+    </select>
+	<update id="editUser" parameterType="SysPadModel">
+		UPDATE pf_sys_user t SET
+		t.realname=#{realName},
+		t.city=#{city},
+		t.state=#{state},
+		t.org_id=#{orgId},
+		t.station=#{station},
+		t.post=#{post},
+		t.address=#{address},
+		t.tel=#{tel},
+		t.email=#{email},
+		<if test="null!=errorCount and errorCount!=''">
+			t.error_count=#{errorCount},
+		</if>
+		<if test="null!=pwdReset and pwdReset!='' and null!=userPassword and userPassword!=''">
+			t.userPassword=#{userPassword},
+		</if>
+		t.remark=#{remark},
+		t.branch_approval_code=#{branchapprovalcode}
+		WHERE t.soleid=#{soleId}
+    </update>
+    <update id="updatePassword" parameterType="SysPadModel">
+		UPDATE pf_sys_user t SET
+		t.userPassword=#{userPassword}
+		WHERE t.userName=#{userName}
+    </update>
+    <update id="updateUserRole" parameterType="SysPadModel">
+		UPDATE pf_sys_userrole t SET
+		t.roleId=#{parallelismRole}
+		WHERE t.userId=#{soleId}
+    </update>
+	<select id="checkUser" parameterType="SysPadModel" resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_sys_user t
+		WHERE 
+    	1 = 1
+		<if test="null!=userName and userName!=''">
+		AND t.username=#{userName}
+		</if>
+		<if test="null!=managerNo and managerNo!=''">
+		AND t.MANAGER_NO=#{managerNo}
+		</if>
+    </select>
+    <select id="getAllPad" parameterType="SysPadModel" resultType="SysPadModel">
+    	select 
+    	soleid soleId,
+    	manager_no managerNo,
+    	username userName
+    	from pf_sys_user
+    	where 
+    	state=1
+    	and 
+    	back_ground = 0
+		<if test="null!=managerNo and managerNo!=''">
+		AND t.MANAGER_NO=#{managerNo}
+		</if>
+    </select>
+    <select id="getAllPadManager" parameterType="SysPadModel" resultType="SysPadModel">
+    	select u.soleid soleId, 
+    	u.username userName, 
+    	u.manager_no managerNo
+		  from pf_sys_user u
+		 where u.state = 1
+		   and u.state != '10'
+		   and u.back_ground = 0
+		 order by managerNo 
+    </select>
+	<update id="updateOrgPrincipalWithNo" parameterType="SysPadModel">
+		UPDATE pf_org t SET
+		t.org_principal=''
+		WHERE t.org_principal=#{managerNo}
+    </update>
+	<update id="updateOrgPrincipalWithId" parameterType="SysPadModel">
+		update pf_org
+		   set org_principal = ''
+		 where org_principal =
+       (select manager_no from pf_sys_user where soleid = #{soleId})
+    </update>
+       <select id="judgeDelete" parameterType="SysUserModel" resultType="int">
+		SELECT
+		COUNT(1)
+	    FROM
+	    pf_org t
+	    WHERE 1=1
+	    AND t.state != '10'
+		AND t.org_principal=#{managerNo}
+    </select>
+    <select id="judgeUpdate" parameterType="SysPadModel" resultType="int">
+		select 
+		count(1) 
+		from pf_org t 
+		where t.org_principal = #{managerNo}
+    </select>
+    <select id="deleteUserPasswordLog" parameterType="SysPadModel">
+    	delete from pf_user_password_log u where u.username=#{userName}
+    </select>
+</mapper>

@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="sysOrg">
+	<select id="getAllOrg" parameterType="SysOrgModel" 
+		resultType="SysOrgModel">
+		select 
+		t.org_id soleId,
+		t.org_no orgNo,
+		t.org_name orgName,
+		t.org_type orgType,
+		t.org_level orgLevel,
+		t.state,
+		t.up_org upOrg,
+		t.org_principal orgPrincipal,
+		t.remark,
+		t.add_time addTime,
+		t.add_user addUser,
+		t.last_edit_time lastEditTime,
+		t.last_edit_user lastEditUser
+		from pf_org t
+		where
+		t.state = 1 
+		order by t.add_time desc
+	</select>
+	
+		<select id="getAllOrg2" parameterType="SysOrgModel" 
+		resultType="SysOrgModel">
+		select 
+		t.org_id soleId,
+		t.org_no orgNo,
+		t.org_name orgName,
+		t.org_type orgType,
+		t.org_level orgLevel,
+		t.state,
+		t.up_org upOrg,
+		t.org_principal orgPrincipal,
+		t.remark,
+		t.add_time addTime,
+		t.add_user addUser,
+		t.last_edit_time lastEditTime,
+		t.last_edit_user lastEditUser
+		from pf_org t
+		where
+		t.state = 1 and t.org_name like  '检件%'
+		order by t.add_time desc
+	</select>
+	
+	<insert id="addOrg" parameterType="SysOrgModel">
+		INSERT INTO pf_org(
+		org_id,
+		org_no,
+		org_name,
+		org_type,
+		org_level,
+		state,
+		up_org,
+		remark,
+		add_time,
+		add_user,
+		last_edit_time,
+		last_edit_user
+		)
+		VALUES(
+		#{soleId},
+		#{orgNo},
+		#{orgName},
+		#{orgType},
+		#{orgLevel},
+		0,
+		#{upOrg},
+		#{remark},
+		sysdate,
+		#{addUser},
+		sysdate,
+		#{addUser}
+		)
+	</insert>
+	<select id="queryOrg" parameterType="SysOrgModel" resultType="SysOrgModel">
+		SELECT * FROM(SELECT a.*,rownum r FROM(
+		SELECT
+		t.org_id soleId,
+		t.org_no orgNo,
+		t.org_name orgName,
+		t.up_org upOrg,
+		t.org_principal orgPrincipal,
+		t.state state,
+		TO_CHAR(t.add_time,'yyyy-mm-dd hh24:mi:ss') addTime,
+		u.username userName,
+        u.manager_no managerNo
+		FROM pf_org t 
+		left join pf_sys_user u 
+		on u.manager_no= t.org_principal
+		WHERE 1=1
+		AND t.state != '10'
+		<if test="orgNo!=null and orgNo!=''">
+			AND t.org_no=#{orgNo}
+		</if>
+		<if test="orgName!=null and orgName!=''">
+			AND t.org_name like '%'||#{orgName}||'%'
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.add_time &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.add_time &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</if>
+		order by t.add_time desc
+		)
+		a )WHERE r &gt; #{startRow} AND rownum
+		&lt;= #{pageSize}
+		<if test="orderFieldName==null">
+			ORDER BY soleId DESC
+	    </if>
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+		
+			<if test="orderByRule!=null">
+				DESC
+	       </if>
+		</if>
+	</select>
+	<select id="queryOrgCount" parameterType="SysOrgModel"
+		resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_org t
+		WHERE 1=1
+		AND t.state != '10'
+		<if test="orgNo!=null and orgNo!=''">
+			AND t.org_no=#{orgNo}
+		</if>
+		<if test="orgName!=null and orgName!=''">
+			AND t.org_name like '%'||#{orgName}||'%'
+		</if>
+		<if test="beginTime!=null and beginTime!=''">
+			AND t.add_time &gt;=
+			to_date(#{beginTime},'yyyy-mm-dd
+			hh24:mi:ss')
+			</if>
+		<if test="endTime!=null and  endTime!=''">
+			AND t.add_time &lt;=
+			to_date(#{endTime}||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</if>
+	</select>
+	<update id="deleteOrg" parameterType="java.util.List">
+		UPDATE pf_org t
+		SET t.state = '10' WHERE t.org_id IN
+		<foreach item="id" index="index" collection="list" open="("
+			separator="," close=")">
+			#{id}
+		</foreach>
+	</update>
+	<select id="findByOrg" parameterType="SysOrgModel" resultType="SysOrgModel">
+		SELECT
+		t.org_id soleId,
+		t.org_no orgNo,
+		t.org_name orgName,
+		t.org_type orgType,
+		t.org_level orgLevel,
+		t.state,
+		t.up_org upOrg,
+		t.org_principal orgPrincipal,
+		t.remark,
+		TO_CHAR(t.add_time,'yyyy-mm-dd hh24:mi:ss') addTime,
+		t.add_user addUser,
+		TO_CHAR(t.last_edit_time,'yyyy-mm-dd hh24:mi:ss') lastEditTime,
+		t.last_edit_user lastEditUser
+		FROM
+		pf_org t
+		WHERE
+		t.org_id=#{soleId}
+    </select>
+	<update id="editOrg" parameterType="SysOrgModel">
+		UPDATE pf_org t SET
+		t.org_no=#{orgNo},
+		t.org_name=#{orgName},
+		t.org_type=#{orgType},
+		t.org_level=#{orgLevel},
+		t.state=#{state},
+		t.up_org=#{upOrg},
+		t.org_principal=#{orgPrincipal},
+		t.remark=#{remark},
+		t.last_edit_time=sysdate,
+		t.last_edit_user=#{lastEditUser}
+		WHERE t.org_id=#{soleId}
+    </update>
+	<select id="checkOrg" parameterType="SysOrgModel" resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_org t
+		WHERE 1=1
+		AND t.state != '10'
+		<if test="null!=orgNo and orgNo!=''">
+		AND t.org_no=#{orgNo}
+		</if>
+		<if test="null!=orgName and orgName!=''">
+		AND t.org_name=#{orgName}
+		</if>
+		<if test="null!=soleId and soleId!=''">
+		AND t.org_id!=#{soleId}
+		</if>
+    </select>
+    <select id="getUpOrg" parameterType="SysOrgModel" 
+		resultType="SysOrgModel">
+		select 
+		t.org_id soleId,
+		t.org_no orgNo,
+		t.org_name orgName
+		from pf_org t
+		where 1=1
+		and t.state=1
+		order by t.add_time desc
+	</select>
+	<select id="getTreeUpOrg" parameterType="SysOrgModel" 
+		resultType="SysOrgModel">
+		select 
+		t.org_id soleId,
+		t.org_no orgNo,
+		t.org_name orgName
+		from pf_org t
+		where 1=1 
+		and t.state=1
+		and t.org_id
+		not in(
+		select 
+		t1.org_id
+		from pf_org t1
+		where 1=1
+		and t1.state=1
+		and t1.up_org is not null
+		<if test="null!=upOrg and upOrg!=''">
+		 start with up_org=#{upOrg}
+		connect by prior org_id = up_org
+		</if>
+		)
+		order by t.add_time desc
+	</select>
+	<select id="getOrgPrincipal" parameterType="SysOrgModel" 
+		resultType="SysOrgModel">
+		select 
+		t.org_id orgId,
+		t.org_no orgNo,
+		t.org_name orgName,
+		t.org_principal orgPrincipal,
+		u.manager_no managerNo,
+		u.soleid soleId,
+		u.username userName
+		from pf_org t 
+		inner join pf_sys_user u on t.org_id = u.org_id
+		where 1=1 
+		and t.state=1
+		and u.state = 1
+		and t.org_id = #{soleId}
+	    order by u.registerdate desc
+	</select>
+	<select id="judgeDeleteDownOrg" parameterType="SysOrgModel" resultType="int">
+		SELECT
+		COUNT(1)
+	    FROM
+	    pf_org t
+	    WHERE 1=1
+	    AND t.state != '10'
+		AND t.up_org=#{soleId}
+    </select>
+	<select id="judgeDeleteDownUser" parameterType="SysOrgModel" resultType="int">
+		SELECT
+		COUNT(1)
+		FROM
+		pf_sys_user t
+		WHERE 1=1
+		AND t.state != '10'
+		AND t.org_id=#{soleId}
+    </select>
+	<select id="judgeUpdate" parameterType="SysOrgModel" resultType="int">
+		select 
+		count(1)
+		from 
+		pf_equipment_bind t 
+		where 
+		t.bind_account =#{oldOrgPrincipal}
+    </select>
+</mapper>

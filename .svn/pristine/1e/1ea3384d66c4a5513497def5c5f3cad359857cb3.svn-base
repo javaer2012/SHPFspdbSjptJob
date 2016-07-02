@@ -1,0 +1,37 @@
+log4j.rootLogger=INFO,ERROR,CONSOLE,R
+#CONSOLE,FILE,ROLLING_FILE,MAIL,DATABASE
+# DEBUG < INFO < WARN < ERROR < FATAL
+log4j.addivity.org.apache=true
+###
+log4j.logger.com.ibatis=INFO
+log4j.logger.com.ibatis.common.jdbc.SimpleDataSource=info
+log4j.logger.com.ibatis.common.jdbc.ScriptRunner=info
+log4j.logger.com.ibatis.sqlmap.engine.impl.SqlMapClientDelegate=info
+log4j.logger.java.sql.Connection=info
+log4j.logger.java.sql.Statement=info
+log4j.logger.java.sql.PreparedStatement=info
+log4j.logger.com.opensymphony.xwork2=ERROR  
+
+###################
+# Console Appender
+###################
+log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+log4j.appender.Threshold=ERROR
+log4j.appender.CONSOLE.Target=System.out
+log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+log4j.appender.CONSOLE.layout.ConversionPattern=[PF_spdbSjptWeb] %d{yyyy-MM-dd HH:mm:ss} %C{8}@(%F:%L)%n  %-5p:%m%n
+#####################
+
+#########add by guanshulong###########
+log4j.appender.R=org.apache.log4j.RollingFileAppender
+log4j.appender.R.File=/u01/app/oracle/middleware/user_projects/domains/spsjjob/logs/PF_spdbSjptJob.log
+log4j.appender.R.Encoding=UTF-8
+log4j.appender.R.MaxFileSize=100MB
+log4j.appender.R.DatePattern='.'yyyy-MM-dd'.log'
+log4j.appender.R.Append=true
+log4j.appender.R.MaxBackupIndex=999
+log4j.appender.R.layout=org.apache.log4j.PatternLayout
+#log4j.appender.R.layout.ConversionPattern=[PF_SpdbWeb] %-d %t %-5p [%c{1}:%L] %m%n
+log4j.appender.R.layout.ConversionPattern=[PF_SpdbWeb] %d [%.5p] %t: [%F] -%c %M %L -- %m%n
+######################
+

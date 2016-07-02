@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MobileNumberModel">
+	<delete id="deleteAll">
+	DELETE PF_MOBILENUMBER_AREA
+	</delete>
+	<insert id="batchAdd" parameterType="MobileNumberModel">
+		INSERT INTO PF_MOBILENUMBER_AREA(MOBILE_NUMBER,MOBILE_AREA,MOBILE_TYPE,AREA_CODE,POST_CODE,CREATE_DATE)VALUES(
+		#{mobileNumber},#{mobileArea,jdbcType=VARCHAR},#{mobileType,jdbcType=VARCHAR},#{areaCode,jdbcType=VARCHAR},#{postCode,jdbcType=VARCHAR},SYSDATE
+		)
+	</insert>
+</mapper>

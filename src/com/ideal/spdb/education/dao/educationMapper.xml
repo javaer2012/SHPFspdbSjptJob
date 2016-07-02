@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="education" >
+
+	<select id="queryEducationRecordByAPPID" parameterType="ApplicationModel" resultType="EducationModel">
+		select education_id educationId, application_id applicationId, identity_card identityCard, user_name userName, 
+		graduate, education_degree educationDegree, enrol_date, speciality_name specialityName, graduate_time graduateTime, 
+		study_result studyResult, study_style studyStyle, results, photo, create_time, call_date callDate, record_date recordDate 
+		from pf_education_record per where record_date = 
+		(select max(record_date) from pf_education_record where application_id = per.application_id)
+		and per.application_id = #{shenqingshucode}
+	</select>
+
+ <select id="selectEducationMessageList" resultType="EducationModel" parameterType="EducationModel" >
+ 	 select b.* from(
+	  select a.*,rownum ar from(
+select pe.application_id AS applicationId,
+       pe.identity_card AS identityCard,
+       pe.user_name AS userName,
+       pe.Graduate AS graduate,
+       pe.GRADUATE_TIME AS graduateTime,
+       pe.STUDY_STYLE AS studyStyle,
+       pe.EDUCATION_DEGREE AS educationDegree,
+       pe.SPECIALITY_NAME AS specialityName,
+       pe.STUDY_RESULT AS studyResult,
+       (case pe.RESULTS
+		        when '1' then '未查到数据'
+		         when '2' then '查询失败'
+		         when '0' then '查询成功'
+		         end
+		        ) AS results,
+       pe.call_date AS callDate,
+       pe.record_date AS recordDate,
+       pe.is_local,
+        (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = pe.callType) callType
+  from pf_education_record pe
+	where 1=1 
+        
+        <if test="beginTime!=null and beginTime!=''">
+			and TRUNC(pe.call_date) &gt;=
+			 TO_date(#{beginTime},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		 <if test="beginTime2!=null and beginTime2!=''">
+			and TRUNC(pe.record_date) &gt;=
+			 TO_date(#{beginTime2},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endTime!=null and endTime!=''">
+			and TRUNC(pe.call_date) &lt;=
+			 TO_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endTime2!=null and endTime2!=''">
+			and TRUNC(pe.record_date) &lt;=
+			 TO_date(#{endTime2},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and pe.application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pe.identity_card =#{identityCard,jdbcType=VARCHAR}
+		</if>
+		<if test="results!=null and results!=''">
+			and pe.RESULTS like CONCAT(CONCAT('%', #{results,jdbcType=VARCHAR}), '%')
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and pe.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pe.calltype = #{callType,jdbcType=VARCHAR}
+		</if>
+	    ) a)b
+		 WHERE b.ar &gt; #{startRow} AND rownum
+		 &lt;= #{pageSize}
+		<if test="orderFieldName==null">
+			ORDER BY callDate
+	    </if>
+	    
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	        </if>
+		</if>
+ 
+ </select>
+ 
+ 
+  <select id="selectEducationListCount"  parameterType="EducationModel" resultType="int">
+	    select  count(1)
+	      from pf_education_record pe
+	where 1=1 
+        
+        <if test="beginTime!=null and beginTime!=''">
+			and TRUNC(pe.call_date) &gt;=
+			 TO_date(#{beginTime},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		 <if test="beginTime2!=null and beginTime2!=''">
+			and TRUNC(pe.record_date) &gt;=
+			 TO_date(#{beginTime2},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endTime!=null and endTime!=''">
+			and TRUNC(pe.call_date) &lt;=
+			 TO_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endTime2!=null and endTime2!=''">
+			and TRUNC(pe.record_date) &lt;=
+			 TO_date(#{endTime2},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endTime2!=null and beginTime2!=''">
+			and pe.call_date &lt;=
+			 TO_date(#{endTime2},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and pe.application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pe.identity_card =#{identityCard,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pe.identity_card =#{identityCard,jdbcType=VARCHAR}
+		</if>
+		<if test="results!=null and results!=''">
+			and pe.RESULTS like CONCAT(CONCAT('%', #{results,jdbcType=VARCHAR}), '%')
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and pe.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pe.calltype = #{callType,jdbcType=VARCHAR}
+		</if>
+  </select>
+  
+  
+  
+   <select id="exprotEducationMessage" resultType="EducationModel" 
+                                   parameterType="EducationModel" >
+     select b.* from(
+	  select a.*,rownum ar from(
+       select pe.application_id AS applicationId,
+       pe.identity_card AS identityCard,
+       pe.user_name AS userName,
+       pe.Graduate AS graduate,
+       pe.GRADUATE_TIME AS graduateTime,
+       pe.STUDY_STYLE AS studyStyle,
+       pe.EDUCATION_DEGREE AS educationDegree,
+       pe.SPECIALITY_NAME AS specialityName,
+       pe.STUDY_RESULT AS studyResult,
+       (case pe.RESULTS
+		        when '1' then '未查到数据'
+		         when '2' then '查询失败'
+		         when '0' then '查询成功'
+		         end
+		        ) AS results,
+       pe.call_date AS callDate,
+       pe.record_date AS recordDate,
+       (case pe.is_local
+		        when '1' then '调库'
+		         when '0' then '非调库'
+		         end
+		        ) AS is_local,
+		        (select psc.childclause
+          from pf_sys_child_datadictionary psc
+         where psc.fatherid =
+               (select psd.soleid
+                  from pf_sys_datadictionary psd
+                 where psd.costvalue = 'CallType')
+           and psc.childcostvalue = pe.CallType) callType
+  from pf_education_record pe
+	where 1=1 
+        
+        <if test="beginTime!=null and beginTime!=''">
+			and TRUNC(pe.call_date) &gt;=
+			 TO_date(#{beginTime},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		 <if test="beginTime2!=null and beginTime2!=''">
+			and TRUNC(pe.record_date) &gt;=
+			 TO_date(#{beginTime2},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endTime!=null and endTime!=''">
+			and TRUNC(pe.call_date) &lt;=
+			 TO_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endTime2!=null and endTime2!=''">
+			and TRUNC(pe.record_date) &lt;=
+			 TO_date(#{endTime2},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and pe.application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pe.identity_card =#{identityCard,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and pe.identity_card =#{identityCard,jdbcType=VARCHAR}
+		</if>
+		<if test="results!=null and results!=''">
+			and pe.RESULTS like CONCAT(CONCAT('%', #{results,jdbcType=VARCHAR}), '%')
+		</if>
+		<if test="is_local!=null and is_local!=''">
+			and pe.is_local = #{is_local,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and pe.calltype = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="orderFieldName==null">
+			ORDER BY callDate
+	    </if>
+	    
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+	        </if>
+		</if>
+	    ) a)b
+		 WHERE 1=1
+		 <if test="beginRecord!=null and beginRecord!='0'.toString()">
+			and  b.ar &gt;=#{beginRecord}
+		 </if>
+		 
+		 <if test="endRecord!=null and endRecord!='0'.toString()">
+			and b.ar &lt;= #{endRecord}
+		 </if>
+  </select>
+</mapper>

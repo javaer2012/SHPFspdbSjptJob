@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="strategycode" >
+	<select id="getNeetExportData" parameterType="StrategyCodeModel" resultType="StrategyCodeModel">
+		select tacticscode_id, appid, jinjiantype, channelcode, citycode, job, sic, cup, age, shengqingrencardnumber,
+			huojikagongzhaibili, fakajigou, querycount, loan_type, otherbankcardinfo, otherbankcarduseinfo, overdue_times1, 
+			overdue_times2, overdue_times3, overdue_times4, overdue_times5, overdue_times6, overdue_times7, overdue_times8, 
+			id_check idCheck, blackList, yellowPage, pboc1, pboc2, socialSecurity, education, tencent, internal, vehicle, localpeople, 
+			mobile, yuliu1, yuliu2, yuliu3, outputcode, overdue_times1_loan, overdue_times2_loan, overdue_times3_loan, 
+			overdue_times4_loan, overdue_times5_loan, overdue_times6_loan, overdue_times7_loan, overdue_times8_loan, flag ,createdate from pf_tacticscode p where (p.flag is null or p.flag != 1) and p.outputcode is not null
+	</select>
+	
+	<update id="updateTacticscode" parameterType="StrategyCodeModel">
+		update pf_tacticscode p set p.flag = #{flag} where p.tacticscode_id = #{tacticscode_id}
+	</update>
+</mapper>

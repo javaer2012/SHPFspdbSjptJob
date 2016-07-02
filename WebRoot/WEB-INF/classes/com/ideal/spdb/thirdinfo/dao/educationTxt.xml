@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="educationTxt">
+
+	<!--获取学历信息列表 -->
+	<select id="getNeedEducationList" resultType="EducationTxtModel">
+		select
+		pe.APPLICATION_ID appid,
+		pe.IDENTITY_CARD idno,
+		pe.USER_NAME appname,
+		pe.GRADUATE graduate,
+		pe.GRADUATE_TIME graduattime,
+		pe.STUDY_STYLE studystyle,
+		pe.EDUCATION_DEGREE educationdegree,
+		pe.STUDY_RESULT studyresult,
+		pe.SPECIALITY_NAME specialityname,
+		(case pe.RESULTS when '1' then '未查到数据'
+		when '0' then '查询成功'
+		when '2' then '查询失败'
+		when '' then '未查询' end) res
+		from pf_education_record pe  where 1=1 and
+		pe.flag = '0'
+	</select>
+	<!--更改上传了的信息状态 -->
+	<update id="updataFlag" parameterType="EducationTxtModel">
+		UPDATE pf_education_record a SET a.FLAG=1 where APPLICATION_ID = #{appid}
+	</update>
+	<parameterMap id="INOUT_PM" type="map">
+		<parameter property="in_type" jdbcType="VARCHAR" javaType="String" mode="IN" />
+		<parameter property="out_system_seq" jdbcType="VARCHAR" javaType="String" mode="OUT" />
+	</parameterMap>
+	<select id="getSequenceValue" statementType="CALLABLE" parameterMap="INOUT_PM" resultType="map">
+		{call pf_checkinfo_seq.create_checkinfo_seq(?,?)}
+	</select>
+
+</mapper>

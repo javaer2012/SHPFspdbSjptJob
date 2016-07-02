@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tencentInstinct">
+
+	<!--获取社保信息列表-->
+	<select id="getNeedThirdinfoList"  resultType="ThirdinfoModel">
+SELECT psr.appid as appid,
+       psr.appname as appname,
+       psr.idno as idno,
+       '9001' as infocode,
+       '腾讯反欺诈' as infoname,
+       (case psr.is_effective
+         when '1' then
+          '未查到数据'
+         when '0' then
+          '查询成功'
+         when '2' then
+          '查询失败'
+         when '' then
+          '未查询'
+       end) as result,
+       to_char(psr.CREATE_DATE, 'YYYYMMDDHH24MISS') as importdate,
+       remark || 'QQ姓名匹配--' || qq_name || ';QQ身份证匹配--' || qq_id ||
+       ';QQ手机匹配--' || qq_mobile || ';身份证姓名匹配--' || id_name || ';身份证手机匹配--' ||
+       id_mobile || ';' as  remark
+  FROM (SELECT t.*,
+               max(decode(type,
+                          'identity',
+                          'ID总反欺诈评级--' || ANTICHEATRANK || ';ID设备总反欺诈评级--' ||
+                          DEVICERANK || ';ID用户身份反欺诈评级--' || IDENTITYRANK ||
+                          ';ID用户关系链反欺诈评级--' || RELACHAINRANK ||
+                          ';ID关联反欺诈评级--' || RELATIONRANK || ';ID是否活跃用户--' ||
+                          ISACTUSER || ';ID是否常用IP段--' || ISCOMMIPC ||
+                          ';ID是否新设备--' || ISNEWDEVICE || ';ID是否新用户--' ||
+                          ISNEWUSER || ';ID是否敏感地区--' || ISSENSIPLACE ||
+                          ';ID最近登陆不同省份个数--' || PROVNUM || ';')) over(partition by appid, version) ||
+               
+               max(decode(type, 'QQ', 'QQ总反欺诈评级--' || ANTICHEATRANK || ';QQ设备总反欺诈评级--' || DEVICERANK || ';QQ用户身份反欺诈评级--' || IDENTITYRANK || ';QQ用户关系链反欺诈评级--' || RELACHAINRANK || ';QQ关联反欺诈评级--' || RELATIONRANK || ';QQ是否活跃用户--' || ISACTUSER || ';QQ是否常用IP段--' || ISCOMMIPC || ';QQ是否新设备--' || ISNEWDEVICE || ';QQ是否新用户--' || ISNEWUSER || ';QQ是否敏感地区--' || ISSENSIPLACE || ';QQ最近登陆不同省份个数--' || PROVNUM || ';')) over(partition by appid, version) ||
+               
+               max(decode(type, 'mobile', '手机总反欺诈评级--' || ANTICHEATRANK || ';手机设备总反欺诈评级--' || DEVICERANK || ';手机用户身份反欺诈评级--' || IDENTITYRANK || ';手机用户关系链反欺诈评级--' || RELACHAINRANK || ';手机关联反欺诈评级--' || RELATIONRANK || ';手机是否活跃用户--' || ISACTUSER || ';手机是否常用IP段--' || ISCOMMIPC || ';手机是否新设备--' || ISNEWDEVICE || ';手机是否新用户--' || ISNEWUSER || ';手机是否敏感地区--' || ISSENSIPLACE || ';手机最近登陆不同省份个数--' || PROVNUM || ';')) over(partition by appid, version) remark,
+               
+               row_number() over(partition by appid, version order by create_date desc) rn
+        
+          FROM pf_tencentfraud_record t where t.isinstinct = '0') psr
+
+ where rn = 1
+union all
+SELECT ps.appid as appid,
+       ps.appname as appname,
+       ps.idno as idno,
+       '9002' as infocode,
+       '腾讯征信 ' as infoname,
+       (case ps.is_effective
+         when '1' then
+          '未查到数据'
+         when '0' then
+          '查询成功'
+         when '2' then
+          '查询失败'
+         when '' then
+          '未查询'
+       end) as result,
+       to_char(ps.CREATE_DATE, 'YYYYMMDDHH24MISS') as importdate,
+       '征信评分--' || PS.Score || ';违约率--' || ps.pd || ';注册历史--' ||
+       ps.freg_his || ';实名历史--' || ps.freal_his || ';绑定信用卡时长--' ||
+       ps.fbind_credit_his || ';绑定信用卡张数--' || ps.fbind_cre_cnt ||
+       ';绑定用户时长--' || ps.fbind_mobile_his || ';最近绑定手机情况--' ||
+       ps.fbind_mobile_recent || ';手机稳定性--' || ps.fbind_mobile_chg ||
+       ';地址稳定性--' || ps.faddress_chg || ';消费层次--' || ps.fxf_level ||
+       ';转账层次--' || ps.fzz_level || ';理财申购层次--' || ps.flc_level ||
+       ';信用卡还款情况--' || ps.fhk_level || ';生活缴费情况--' || ps.fjf_level ||
+       ';贷款余额--' || ps.floan_balance || ';未结清贷款笔数--' || ps.floan_unpay_cnt ||
+       ';当前贷款状态--' || ps.floan_state || ';当前贷款状态--' || ps.flast_dead_line ||
+       ';逾期贷款笔数--' || ps.fdead_unpay_cnt || ';网龄--' || ps.finternet_age ||
+       ';社交活跃度--' || ps.factive_level || ';社交圈--' || ps.fsocial_level ||
+       ';在线交易量--' || ps.fjy_amt_level || ';在线交易活跃度--' || ps.fjy_month_level as remark
+  FROM pf_tencentreport_record PS
+ where ps.isinstinct = '0'
+	</select>
+	<!--更改上传了的信息状态-->
+	<update id="updataFlag" parameterType="ThirdinfoModel">
+	UPDATE pf_tencentfraud_record a SET a.isinstinct=1 where APPID = #{appid}
+	</update>
+	<!--更改上传了的信息状态-->
+	<update id="updataFlag2" parameterType="ThirdinfoModel">
+	UPDATE pf_tencentreport_record a SET a.isinstinct=1 where APPID = #{appid}
+	</update>
+	
+	
+</mapper>

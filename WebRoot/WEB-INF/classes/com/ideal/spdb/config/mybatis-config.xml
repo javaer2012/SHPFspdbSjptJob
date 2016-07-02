@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<typeAliases>
+		<typeAlias alias="SysUserModel" type="com.ideal.spdb.system.model.SysUserModel" />
+		<typeAlias alias="SysPadModel" type="com.ideal.spdb.system.model.SysPadModel" />
+		<typeAlias alias="SysOrgModel" type="com.ideal.spdb.system.model.SysOrgModel" />
+		<typeAlias alias="SysOperateLogModel" type="com.ideal.spdb.system.model.SysOperateLogModel" />
+		<typeAlias alias="SysRoleModel" type="com.ideal.spdb.system.model.SysRoleModel" />
+		<typeAlias alias="SysRoleResourceModel" type="com.ideal.spdb.system.model.SysRoleResourceModel" />
+		<typeAlias alias="SysOperateAuthorityModel" type="com.ideal.spdb.system.model.SysOperateAuthorityModel" />
+		<typeAlias alias="SysFathernodeResourceModel" type="com.ideal.spdb.system.model.SysFathernodeResourceModel" />
+		<typeAlias alias="SysChildnodeResourceModel" type="com.ideal.spdb.system.model.SysChildnodeResourceModel" />
+		<typeAlias alias="SysAuthorityResourceModel" type="com.ideal.spdb.system.model.SysAuthorityResourceModel" />
+		<typeAlias alias="PbLogSystemRun" type="com.ideal.spdb.system.model.PbLogSystemRunModel" />
+		
+		<typeAlias alias="SysDatadictionarModel" type="com.ideal.spdb.datadictionary.model.SysDatadictionarModel" />
+		<typeAlias alias="SysChilddatadictionarModel" type="com.ideal.spdb.datadictionary.model.SysChilddatadictionarModel" />
+		<!-- 第三方信息查询 -->
+		<typeAlias alias="ApplicationModel" type="com.ideal.spdb.datamanager.model.ApplicationModel" />
+		<typeAlias alias="FsApplicationModel" type="com.ideal.spdb.datamanager.model.FsApplicationModel" />
+		<!-- 学历 -->
+		<typeAlias alias="EducationModel" type="com.ideal.spdb.education.model.EducationModel" />
+		<!-- 接口  -->
+		<typeAlias alias="CallReportModel" type="com.ideal.spdb.callreport.model.CallReportModel" />
+		<!-- 人工查询 -->
+		<typeAlias alias="ManuallyModel" type="com.ideal.spdb.manuallyManager.model.ManuallyModel" />
+		<!-- 汽车信息 -->
+		<typeAlias alias="VehicleModel" type="com.ideal.spdb.vehicle.model.VehicleModel" />
+		<!-- 20150505 add by ykl 车辆 -->
+		<typeAlias alias="Vehicle" type="com.ideal.spdb.thirdinfo.model.Vehicle" />
+		<typeAlias alias="EucVehicleModel" type="com.ideal.spdb.thirdinfo.model.EucVehicleModel" />
+		<typeAlias alias="SocialsecurityModel" type="com.ideal.spdb.thirdinfo.model.SocialsecurityModel" />
+		<typeAlias alias="ThirdinfoModel" type="com.ideal.spdb.thirdinfo.model.ThirdinfoModel" />
+		<!-- 社保信息 -->
+		<typeAlias alias="SocialInsuranceModel" type="com.ideal.spdb.socialInsurance.model.SocialInsuranceModel" />
+		<!-- 公安网信息 -->
+		<typeAlias alias="PublicSecurityModel" type="com.ideal.spdb.publicsecurity.model.PublicSecurityModel" />
+		<typeAlias alias="PublicSecurityTZRModel" type="com.ideal.spdb.publicsecurity.model.PublicSecurityTZRModel" />
+		<!-- 聚信力黑名单 -->
+		<typeAlias alias="JuxinliBlackListRecordModel" type="com.ideal.spdb.juxinliBlackList.model.JuxinliBlackListRecordModel" />
+		<typeAlias alias="JuxinliBlackListExportModel" type="com.ideal.spdb.thirdinfo.model.JuxinliBlackListExportModel" />
+		<!-- 腾讯 -->
+		<typeAlias alias="TencentModel" type="com.ideal.spdb.thirdinfo.model.TencentModel" />
+		
+		<typeAlias alias="TencentReportModel" type="com.ideal.spdb.tencent.model.TencentReportModel" />
+		
+		<!-- 导入报表 -->
+		<typeAlias alias="ThirdInfoReportModel" type="com.ideal.spdb.thirdinforeport.model.ThirdInfoReportModel" />
+		
+		<!-- 聚信立个人资信报表 -->
+		<typeAlias alias="JuXinLiReportModel" type="com.ideal.spdb.datamanager.model.JuXinLiReportModel" />
+		<!-- 学历上传  -->
+		<typeAlias alias="EducationTxtModel" type="com.ideal.spdb.thirdinfo.model.EducationTxtModel" />
+		<!-- 深圳鹏程逾期名单下载  -->
+		<typeAlias alias="SZOverdueModel" type="com.ideal.spdb.thirdinfo.model.SZOverdueModel" />
+		<!-- 学历批量导入 -->
+		<typeAlias alias="EduImportModel" type="com.ideal.spdb.thirdinfo.model.EduImportModel" />
+		<!--聚信力报告报表-->
+		<typeAlias alias="JxlReportModel" type="com.ideal.spdb.juXinLiReport.model.JxlReportModel" />
+		<!-- 线下开关配置信息 -->
+		<typeAlias alias="FlowflagModel" type="com.ideal.spdb.flowflag.model.FlowflagModel" />
+		<!-- PBOC信息 -->
+		<typeAlias alias="pbocModel" type="com.ideal.spdb.pboc.model.PbocModel" />
+		<!-- 广州移动 -->
+		<typeAlias alias="GZMobileRecord" type="com.ideal.spdb.gzMobile.model.GZMobileRecord" />
+		<!-- 芝麻信用-->
+		<typeAlias alias="ZmxyModel" type="com.ideal.spdb.zmxy.model.ZmxyModel" />
+		<!-- 百融金服-->
+		<typeAlias alias="BairongModel" type="com.ideal.spdb.bairong.model.BairongModel" />
+		<!-- 策略编码-->
+		<typeAlias alias="PolicyDeployModel" type="com.ideal.spdb.policydeploy.model.PolicyDeployModel" />
+		<typeAlias alias="PolicyVersionModel" type="com.ideal.spdb.policydeploy.model.PolicyVersionModel" />
+		<!-- 策略编码导出 -->
+		<typeAlias alias="StrategyCodeModel" type="com.ideal.spdb.strategyCode.model.StrategyCodeModel" />
+		<!-- 手机归属地 -->
+		<typeAlias alias="MobileNumberModel" type="com.ideal.spdb.thirdinfo.model.MobileNumberModel" />
+		<!-- 身份证归属地 -->
+		<typeAlias alias="IdentityCardModel" type="com.ideal.spdb.thirdinfo.model.IdentityCardModel" />
+		<!-- 支付宝-->
+		<typeAlias alias="ZfbModel" type="com.ideal.spdb.zfb.model.ZfbModel" />
+		<!-- idcheck报表 -->
+		<typeAlias alias="IdCheckRecordModel" type="com.ideal.spdb.idcheck.model.IdCheckRecordModel" />
+		<!-- 腾讯反欺诈 -->
+		<typeAlias alias="TencentFraudReportModel" type="com.ideal.spdb.tencent.model.TencentFraudReportModel" />
+		<!-- 入仓model -->
+		<typeAlias alias="RucangModel" type="com.ideal.spdb.thirdinfo.model.RucangModel" />
+		<!-- idcheck model -->
+		<typeAlias alias="ApprovalIdcheckModel" type="com.ideal.spdb.thirdinfo.model.ApprovalIdcheckModel" />
+		<!-- 支付宝2审批 -->
+		<typeAlias alias="ZfbzxModel" type="com.ideal.spdb.thirdinfo.model.ZfbzxModel" />
+		<!-- zmxyIvs2审批 -->
+		<typeAlias alias="ApprovalZmxyIvsModel" type="com.ideal.spdb.thirdinfo.model.ApprovalZmxyIvsModel" />
+		<!-- 内部黑名单入库 -->
+		<typeAlias alias="CapsblacklistModel" type="com.ideal.spdb.thirdinfo.model.CapsBlackListModel" />
+		<!-- 分行审批机构代码 -->
+		<typeAlias alias="AppInfoModel" type="com.ideal.spdb.thirdinfo.model.AppInfoModel" />
+	</typeAliases>
+	
+	<typeHandlers>
+		<typeHandler javaType="oracle.sql.BFILE" handler="com.ideal.spdb.thirdinfo.util.BFileHandler"/>
+	</typeHandlers>
+	
+	<mappers>
+		<mapper resource="com/ideal/spdb/system/dao/sysUser.xml" />
+		<mapper resource="com/ideal/spdb/system/dao/sysPad.xml" />
+		<mapper resource="com/ideal/spdb/system/dao/sysOrg.xml" />
+		<mapper resource="com/ideal/spdb/system/dao/sysLog.xml" />
+		<mapper resource="com/ideal/spdb/system/dao/sysRole.xml" />
+		
+		<mapper resource="com/ideal/spdb/datadictionary/dao/sysDatadictionar.xml" />
+		<mapper resource="com/ideal/spdb/datadictionary/dao/sysChilddatadictionar.xml" />
+		<!-- 第三方信息查询 -->
+		<mapper resource="com/ideal/spdb/datamanager/dao/Application.xml" />
+		<mapper resource="com/ideal/spdb/datamanager/dao/FSApplication.xml" />
+		<!-- 学历 -->
+		<mapper resource="com/ideal/spdb/education/dao/educationMapper.xml" />
+		<!-- 接口调用报表 -->
+		<mapper resource="com/ideal/spdb/callreport/dao/callreportMapper.xml" />
+		<!-- 人工查询 -->
+		<mapper resource="com/ideal/spdb/manuallyManager/dao/manually.xml" />
+		<!-- 汽车信息 -->
+		<mapper resource="com/ideal/spdb/vehicle/dao/vehicle.xml" />
+		<!-- 20150505 add by ykl 车辆 -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/eucvehicleexcel.xml" />
+		<!-- 社保信息 -->
+		<mapper resource="com/ideal/spdb/socialInsurance/dao/socialInsurance.xml" />
+		<!-- 公安网信息 -->
+		<mapper resource="com/ideal/spdb/publicsecurity/dao/publicSecurity.xml" />
+		<!-- 20150519 add by ykl  -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/socialsecurity.xml" />
+		
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/thirdinfo.xml" />
+		<!-- 聚信力黑名单 -->
+		<mapper resource="com/ideal/spdb/juxinliBlackList/dao/JuxinliBlackListRecord.xml" />
+		<!-- 腾讯 -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/tencent.xml" />
+		<mapper resource="com/ideal/spdb/tencent/dao/tencentReport.xml" />
+		<!-- 腾讯征信 -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/tencentInstinct.xml" />
+		
+		<!-- 导入报表 -->
+		<mapper resource="com/ideal/spdb/thirdinforeport/dao/thirdInfoReport.xml" />
+		
+		<!-- 聚信立个人资信报表 -->
+		<mapper resource="com/ideal/spdb/datamanager/dao/JuXinLiReport.xml" />
+		<!-- 学历上传  -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/educationTxt.xml" />
+		<!-- 深圳鹏程逾期名单下载  -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/SZOverdue.xml" />
+		
+		<!-- Instinct生成文件  -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/instinct.xml" />
+		<!-- Approval生成文件  -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/approval.xml" />
+		<!-- 学历批量导入查询  -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/eduimport.xml" />
+		<!-- 聚信力报告报表 -->
+		<mapper resource="com/ideal/spdb/juXinLiReport/dao/jxlReport.xml" />
+		<!-- 线下开关配置信息 -->
+		<mapper resource="com/ideal/spdb/flowflag/dao/flowflag.xml" />
+		<!-- PBOC信息 -->
+		<mapper resource="com/ideal/spdb/pboc/dao/pboc.xml" />
+		<!-- 广州移动 -->
+		<mapper resource="com/ideal/spdb/gzMobile/dao/GZMobile.xml" />
+		<!-- 芝麻信用 -->
+		<mapper resource="com/ideal/spdb/zmxy/dao/zmxy.xml" />
+		<!-- 百融金服 -->
+		<mapper resource="com/ideal/spdb/bairong/dao/bairong.xml" />
+		<!-- 策略编码-->
+		<mapper resource="com/ideal/spdb/policydeploy/dao/policy.xml" />
+		<!-- 策略编码导出 -->
+		<mapper resource="com/ideal/spdb/strategyCode/dao/StrategyCode.xml" />
+		<!-- 手机归属地 -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/mobileNumber.xml" />
+		<!-- 身份证归属地 -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/identityCard.xml" />
+		<!-- 支付宝 -->
+		<mapper resource="com/ideal/spdb/zfb/dao/zfb.xml" />
+		<!-- idcheck报表 -->
+		<mapper resource="com/ideal/spdb/idcheck/dao/IdCheck.xml" />
+		<!-- 入仓 -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/rucang.xml" />
+		<!-- 支付宝2审批 -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/zfbzx.xml" />
+		<!-- 内部黑名单入库 -->
+		<mapper resource="com/ideal/spdb/thirdinfo/dao/capsblacklist.xml" />
+	</mappers>
+</configuration>

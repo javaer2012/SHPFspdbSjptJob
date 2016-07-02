@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="idcheck">
+
+	<select id="queryIdCheckRecordList" parameterType="IdCheckRecordModel"
+		resultType="IdCheckRecordModel">
+		select * from(select a.*,rownum r from((
+		select
+		idcheck_record_id,
+		application_id applicationId,
+		identity_card identityCard,
+		idcheck_result,
+		signOffice,
+		(case is_effective
+		when '9' then
+		'未查到数据'
+		when '2' then
+		'查询失败'
+		when '0' then
+		'查询成功'
+		end) AS isEffective,
+		(case flag
+         when '0' then
+          '未导入'
+         when '1' then
+          '已导入'
+       end) AS flag,
+		(select psc.childclause
+            from pf_sys_child_datadictionary psc
+           where psc.fatherid =
+                 (select psd.soleid
+                    from pf_sys_datadictionary psd
+                   where psd.costvalue = 'CallType')
+             and psc.childcostvalue = CallType) callType,
+		to_char(call_date, 'yyyyMMDDHHMMss') call_date,
+		to_char(record_date, 'yyyyMMDDHHMMss') record_date
+		from pf_idcheck_record 
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(call_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(call_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(record_date) &gt;= TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(record_date) &lt;= TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and identity_card like
+			'%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and calltype = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="idcheck_result!=null and idcheck_result!=''">
+			and idcheck_result = #{idcheck_result,jdbcType=VARCHAR}
+		</if>
+		) a))
+		WHERE r &gt; #{startRow} AND rownum &lt;= #{pageSize}
+
+		<if test="orderFieldName!=null">
+			ORDER BY ${orderFieldName}
+			<if test="orderByRule!=null">
+				DESC
+			</if>
+		</if>
+	</select>
+	
+	<select id="queryIdCheckRecordCount" parameterType="IdCheckRecordModel" resultType="int">
+		select count(1) from pf_idcheck_record 
+		where 1=1
+		<if test="startSearchDate!=null and startSearchDate!=''">
+			and TRUNC(call_date) &gt;=
+			TO_date(#{startSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endSearchDate!=null and endSearchDate!=''">
+			and TRUNC(call_date) &lt;=
+			TO_date(#{endSearchDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="startReturnDate!=null and startReturnDate!=''">
+			and TRUNC(record_date) &gt;= TO_date(#{startReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="endReturnDate!=null and endReturnDate!=''">
+			and TRUNC(record_date) &lt;= TO_date(#{endReturnDate},'yyyy-mm-dd hh24:mi:ss')
+		</if>
+		<if test="applicationId!=null and applicationId!=''">
+			and application_id =#{applicationId,jdbcType=VARCHAR}
+		</if>
+		<if test="identityCard!=null and identityCard!=''">
+			and identity_card like
+			'%'||#{identityCard,jdbcType=VARCHAR}||'%'
+		</if>
+		<if test="isEffective!=null and isEffective!=''">
+			and is_effective = #{isEffective,jdbcType=VARCHAR}
+		</if>
+		<if test="flag!=null and flag!=''">
+			and flag = #{flag,jdbcType=VARCHAR}
+		</if>
+		<if test="callType!=null and callType!=''">
+			and calltype = #{callType,jdbcType=VARCHAR}
+		</if>
+		<if test="idcheck_result!=null and idcheck_result!=''">
+			and idcheck_result = #{idcheck_result,jdbcType=VARCHAR}
+		</if>
+	</select>
+
+</mapper>

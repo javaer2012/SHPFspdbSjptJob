@@ -1,0 +1,1243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:dwr="http://www.directwebremoting.org/schema/spring-dwr"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd 
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-2.5.xsd 
+	http://www.springframework.org/schema/jee 
+	http://www.springframework.org/schema/jee/spring-jee-2.5.xsd 
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd 
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-2.5.xsd
+    http://www.directwebremoting.org/schema/spring-dwr    
+    http://www.directwebremoting.org/schema/spring-dwr-3.0.xsd
+	"
+	default-lazy-init="false">
+	
+<!--	default-autowire="byName" -->
+
+	<!-- 启用 annotation 配置模式 -->
+	<dwr:configuration />
+	<!-- spring容器中检查拥有@RemoteProxy 和 @RemoteMethod注解的类 -->
+	<dwr:annotation-config />
+	<!-- 要求DWR将util.js和engine.js映射到dwrController -->
+	<dwr:url-mapping />
+	<!-- 开启debug -->
+	<dwr:controller id="dwrController" debug="true" />
+	<!-- 扫描需要转换的java对象 -->
+	<dwr:annotation-scan scanRemoteProxy="true"
+		base-package="com.ideal.spdb" />
+
+	<!-- 使用annotation 自动注册bean,并保证@Required,@Autowired的属性被注入 -->
+	<context:component-scan base-package="com.ideal.spdb" />
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+	<!-- 定义受环境影响易变的变量 -->
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<!-- 标准配置 -->
+				<value>classpath:com/ideal/spdb/config/jdbc.properties
+				</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- jndi -->
+<!-- 	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean"> -->
+<!-- 		<property name="jndiName"> -->
+<!-- 			<value>spsj</value> -->
+<!-- 		</property> -->
+<!-- 	</bean> -->
+	
+	<!-- 数据源配置,使用应用内的DBCP数据库连接池 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<!-- Connection Info -->
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+
+		<!-- 初始化连接 -->
+		<property name="initialSize" value="10" />
+		<!--最大连接数量 -->
+		<property name="maxActive" value="100" />
+		<!-- 最大空闲连接 -->
+		<property name="maxIdle" value="30" />
+		<!-- 超时等待时间以毫秒为单位, 当Connection用尽了，多久之后进行回收丢失连接 -->
+		<property name="maxWait" value="500" />
+		<!-- 对于事务是否 autoCommit, 默认值为 true -->
+		<property name="defaultAutoCommit" value="false" />
+	</bean>
+
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="configLocation"
+			value="classpath:com/ideal/spdb/config/mybatis-config.xml" />
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!--
+		通过扫描的模式，扫描目录在com/medbri/integration/*/mapper目录下，所有的mapper都继承SqlMapper接口
+		这样一个bean就可以了
+	-->
+<!--	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">-->
+<!--		<property name="basePackage" value="com.ideal.spdb.*.mapper" />-->
+<!--		<property name="markerInterface" value="com.ideal.spdb.utils.SqlMapper" />-->
+<!--	</bean>-->
+
+	<!-- 事务管理器配置,单数据源事务 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- 配置事务代理 -->
+	<aop:config proxy-target-class="true">
+		<aop:advisor pointcut="execution(* com.ideal.spdb.*.service..*Service.*(..))"
+			advice-ref="txAdvice" />
+		<aop:advisor pointcut="execution(* com.ideal.spdb.utils..*Service.*(..))"
+			advice-ref="txAdvice" />
+	</aop:config>
+
+	<!-- 事物传播属性 -->
+	<tx:advice id="txAdvice">
+		<tx:attributes>
+			<tx:method name="get*" read-only="true" />
+			<tx:method name="find*" read-only="true" />
+			<tx:method name="query*" read-only="true" />
+			<tx:method name="is*" read-only="true" />
+			<tx:method name="getSequenceValue" propagation="REQUIRES_NEW" />
+			<tx:method name="*" propagation="REQUIRED" rollback-for="Exception" />
+		</tx:attributes>
+	</tx:advice>
+		
+	
+	
+	
+	<!-- 车辆信息上传 -->
+	<bean id="vehicle" class="com.ideal.spdb.thirdinfo.work.VehicleWork" />
+	<bean id="jobDetail_ve"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="vehicle" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadCarInfo</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_ve" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_ve" />
+		</property>
+		<property name="cronExpression">
+			<value>0/1 * * * * ?</value>
+<!-- 			<value>00 * * * * ?</value> -->
+		</property>
+	</bean>
+	
+	<!-- EUC车辆信息获取  -->
+	<bean id="eucvehicle" class="com.ideal.spdb.thirdinfo.work.batchimport.EucVehicleExcelWork" />
+	<bean id="jobDetail_eucve"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="eucvehicle" />
+		</property>
+		<property name="targetMethod">
+			<value>EucHandleExcel</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_eucve" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_eucve" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	<!-- 社保信息获取  -->
+	<bean id="Socialsecurity" class="com.ideal.spdb.thirdinfo.work.SocialsecurityWork" />
+	<bean id="jobDetail_ss"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="Socialsecurity" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadSocialsecurity</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_ss" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_ss" />
+		</property>
+		<property name="cronExpression">
+			<value>00 * * * * ?</value>
+		</property>
+	</bean>
+	
+	
+	<!-- 武汉社保信息获取  -->
+	<bean id="WHSocialsecurity" class="com.ideal.spdb.thirdinfo.work.ThirdInfoWork" />
+	<bean id="jobDetail_whss"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="WHSocialsecurity" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadSocialsecurity</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_whss" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_whss" />
+		</property>
+		<property name="cronExpression">
+			<value>00 * * * * ?</value>
+		</property>
+	</bean>
+	<!-- 公安网信息同步 -->
+	<bean id="publicSecurity" class="com.ideal.spdb.thirdinfo.work.PublicSecurityWork" />
+	<bean id="jobDetail_publicSecurity"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="publicSecurity" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadPublicSecurity</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_public" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_publicSecurity" />
+		</property>
+		<property name="cronExpression">
+			<value>00 * * * * ?</value>
+		</property>
+	</bean>
+	<!-- 聚信力黑名单信息同步 -->
+	<bean id="juxinliblacklist" class="com.ideal.spdb.thirdinfo.work.JuxinliBlackListWork" />
+	<bean id="jobDetail_juxinliblacklist"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="juxinliblacklist" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadJuxinliBlackList</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_juxinliblacklist" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_juxinliblacklist" />
+		</property>
+		<property name="cronExpression">
+			<value>00 * * * * ?</value>
+		</property>
+	</bean>
+	<!-- 聚信力黑名单信息导出 -->
+	<bean id="juxinliblacklist_export" class="com.ideal.spdb.thirdinfo.work.JuxinliBlackListWork" />
+	<bean id="jobDetail_juxinliblacklist_export"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="juxinliblacklist_export" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadJuxinliBlackListXLS</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_juxinliblacklist_export" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_juxinliblacklist_export" />
+		</property>
+		<property name="cronExpression">
+			<value>00 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 腾讯 -->
+	<bean id="tencent" class="com.ideal.spdb.thirdinfo.work.TencentWork" />
+	<bean id="tencent_jobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="tencent" />
+		</property>
+		<property name="targetMethod">
+			<value>tencentJob</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="tencent_cronTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="tencent_jobDetail" />
+		</property>
+		<property name="cronExpression">
+			<value>0/20 * * * * ?</value>
+		</property>
+	</bean>
+	<!-- 腾讯上传 -->
+	<bean id="tencentinstinct" class="com.ideal.spdb.thirdinfo.work.TencentInstinctWork" />
+	<bean id="tencentinstinct_jobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="tencentinstinct" />
+		</property>
+		<property name="targetMethod">
+			<value>tencentInstinctJob</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="tencentinstinct_cronTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="tencentinstinct_jobDetail" />
+		</property>
+		<property name="cronExpression">
+			<value>0/20 * * * * ?</value>
+		</property>
+	</bean>
+	
+	
+	<!-- 学历信息提取 -->
+	<bean id="EducationTxt" class="com.ideal.spdb.thirdinfo.work.EducationTxtWork" />
+	<bean id="jobDetail_edu"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="EducationTxt" />
+		</property>
+		<property name="targetMethod">
+			<value>everyDayUploadEducation</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_edu" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_edu" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+		<!-- 深圳鹏程逾期名单下载  -->
+	<bean id="SZOverdue" class="com.ideal.spdb.thirdinfo.work.batchimport.SZOverdueWork" />
+	<bean id="jobDetail_SZO"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="SZOverdue" />
+		</property>
+		<property name="targetMethod">
+			<value>SZOverdueExcel</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_SZO" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_SZO" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+	
+	<!-- 深圳鹏源数据社保返回上传  -->
+	<bean id="shebaodatareturn" class="com.ideal.spdb.thirdinfo.work.SheBaoDataReturnWork" />
+	<bean id="jobDetail_shebaodatareturn"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="shebaodatareturn" />
+		</property>
+		<property name="targetMethod">
+			<value>goWork</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_shebaodatareturn" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_shebaodatareturn" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 每天凌晨设置count为0 -->
+	<bean id="count" class="com.ideal.spdb.thirdinfo.work.countWork" />
+	<bean id="jobDetail_count"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="count" />
+		</property>
+		<property name="targetMethod">
+			<value>setCount</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_count" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_count" />
+		</property>
+		<property name="cronExpression">
+			<value>* */30 * * * ?</value>
+		</property>
+	</bean>
+	<!-- 腾讯toCRM -->
+	<bean id="tencent2crm" class="com.ideal.spdb.thirdinfo.work.others.TencentCRMWork" />
+	<bean id="jobDetail_tencent2crm"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="tencent2crm" />
+		</property>
+		<property name="targetMethod">
+			<value>tencentCRMJob</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_tencent2crm" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_tencent2crm" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+		<!-- Approval上传腾讯征信  -->
+	<bean id="approvaltencentwork" class="com.ideal.spdb.thirdinfo.work.approvalwork.ApprovalTencentWork" />
+	<bean id="jobDetail_approvaltencentwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="approvaltencentwork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadApproval</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_approvaltencentwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_approvaltencentwork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+		<!-- Approval上传广州移动  -->
+	<bean id="approvalGZmobilework" class="com.ideal.spdb.thirdinfo.work.approvalwork.ApprovalGZmobileWork" />
+	<bean id="jobDetail_approvalGZmobilework"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="approvalGZmobilework" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadApproval</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_approvalGZmobilework" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_approvalGZmobilework" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+				<!-- instinct上传深圳社保  -->
+	<bean id="instinctszwork" class="com.ideal.spdb.thirdinfo.work.instinctwork.InstinctSZWork" />
+	<bean id="jobDetail_instinctszwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="instinctszwork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadInstinct</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_instinctszwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_instinctszwork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 0 * * * ?</value>
+		</property>
+	</bean>
+			<!-- instinct上传武汉社保  -->
+	<bean id="instinctwhwork" class="com.ideal.spdb.thirdinfo.work.instinctwork.InstinctWHWork" />
+	<bean id="jobDetail_instinctwhwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="instinctwhwork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadInstinct</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_instinctwhwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_instinctwhwork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 0 * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- instinct上传公安网社保  -->
+	<bean id="instinctpublicwork" class="com.ideal.spdb.thirdinfo.work.instinctwork.InstinctPublicWork" />
+	<bean id="jobDetail_instinctpublicwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="instinctpublicwork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadInstinct</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_instinctpublicwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_instinctpublicwork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+		<!-- 批量学历  -->
+	<bean id="eduImportWork" class="com.ideal.spdb.thirdinfo.work.batchimport.EduImportWork" />
+	<bean id="jobDetail_eduImportWork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="eduImportWork" />
+		</property>
+		<property name="targetMethod">
+			<value>eduImportInfo</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_eduImportWork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_eduImportWork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 批量聚信立黑名单  -->
+	<bean id="juxinliImportWork" class="com.ideal.spdb.thirdinfo.work.JuxinliBlackListWork" />
+	<bean id="jobDetail_juxinliImportWork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="juxinliImportWork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayQueryAllJuxinliBlackListByXLS</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_juxinliImportWork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_juxinliImportWork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 批量公安网十三项  -->
+	<bean id="publicSecurityImportWork" class="com.ideal.spdb.thirdinfo.work.PublicSecurityWork" />
+	<bean id="jobDetail_publicSecurityImportWork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="publicSecurityImportWork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayQueryAllPublicSecurityByXLS</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_publicSecurityImportWork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_publicSecurityImportWork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 批量公安网同住人  -->
+	<bean id="publicSecurityTZRImportWork" class="com.ideal.spdb.thirdinfo.work.PublicSecurityWork" />
+	<bean id="jobDetail_publicSecurityTZRImportWork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="publicSecurityTZRImportWork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayQueryAllPublicSecurityTZRByXLS</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_publicSecurityTZRImportWork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_publicSecurityTZRImportWork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 黑名单实时自动导入审批Caps系统  -->
+	<bean id="OutputBlackListInfoWork" class="com.ideal.spdb.thirdinfo.work.JuxinliBlackListWork" />
+	<bean id="jobDetail_OutputBlackListInfoWork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="OutputBlackListInfoWork" />
+		</property>
+		<property name="targetMethod">
+			<value>OutputBlackListInfo</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_OutputBlackListInfoWork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_OutputBlackListInfoWork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 批量社保信息  -->
+	<bean id="socialsecurityImportWork" class="com.ideal.spdb.thirdinfo.work.SocialsecurityWork" />
+	<bean id="jobDetail_socialsecurityImportWork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="socialsecurityImportWork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayQueryAllSocialsecurityByXLS</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_socialsecurityImportWork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_socialsecurityImportWork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 芝麻信用批量上挂 -->
+	<bean id="zmxy" class="com.ideal.spdb.thirdinfo.work.batchimport.ZmxyWork" />
+	<bean id="jobDetail_zmxy"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="zmxy" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayQueryAllZmxyByXLS</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_zmxy" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_zmxy" />
+		</property>
+		<property name="cronExpression">
+			<value>00 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 百融金服批量上挂 -->
+	<bean id="bairong" class="com.ideal.spdb.thirdinfo.work.BairongWork" />
+	<bean id="jobDetail_bairong"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="bairong" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayQueryAllBairongByXLS</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_bairong" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_bairong" />
+		</property>
+		<property name="cronExpression">
+			<value>00 * * * * ?</value>
+		</property>
+	</bean>
+	<!-- instinct上传芝麻信用  -->
+	<bean id="instinctzmxywork" class="com.ideal.spdb.thirdinfo.work.instinctwork.InstinctZmxyWork" />
+	<bean id="jobDetail_instinctzmxywork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="instinctzmxywork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadInstinct</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_instinctzmxywork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_instinctzmxywork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+		<!-- instinct上传支付宝(需求取消) -->
+	<bean id="instinctzfbwork" class="com.ideal.spdb.thirdinfo.work.instinctwork.InstinctZfbWork" />
+	<bean id="jobDetail_instinctzfbwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="instinctzfbwork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadInstinct</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_instinctzfbwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_instinctzfbwork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+			<!-- instinct上传身份证归属地  -->
+	<bean id="InstinctIdWork" class="com.ideal.spdb.thirdinfo.work.instinctwork.InstinctIdWork" />
+	<bean id="jobDetail_instinctIDwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="InstinctIdWork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadInstinct</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_instinctIDwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_instinctIDwork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+			<!-- instinct上传手机归属地  -->
+	<bean id="instinctMobilework" class="com.ideal.spdb.thirdinfo.work.instinctwork.InstinctMobileWork" />
+	<bean id="jobDetail_instinctMobilework"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="instinctMobilework" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadInstinct</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_instinctMobilework" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_instinctMobilework" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 审批上传策略编码  -->
+	<bean id="strategyCodeUploadwork" class="com.ideal.spdb.strategyCode.work.StrategyCodeWork" />
+	<bean id="jobDetail_strategyCodeUploadwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="strategyCodeUploadwork" />
+		</property>
+		<property name="targetMethod">
+			<value>doExportStrategyCodeFileWork</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_strategyCodeUploadwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_strategyCodeUploadwork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
+		<!-- 入仓  -->
+	<bean id="rucangwork" class="com.ideal.spdb.thirdinfo.work.rucang.RucangWork" />
+	<bean id="jobDetail_rucangwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="rucangwork" />
+		</property>
+		<property name="targetMethod">
+			<value>doservice</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_rucangwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_rucangwork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+
+	<!-- 手机区号导入-->
+	<bean id="mobileNumberWork" class="com.ideal.spdb.thirdinfo.work.batchimport.MobileNumberWork" />
+	<bean id="jobDetail_mobileNumberWork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="mobileNumberWork" />
+		</property>
+		<property name="targetMethod">
+			<value>importMobileNumber</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_mobileNumberWork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_mobileNumberWork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	<!-- 身份证归属地导入-->
+	<bean id="identityCardWork" class="com.ideal.spdb.thirdinfo.work.batchimport.IdentityCardWork" />
+	<bean id="jobDetail_identityCardWork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="identityCardWork" />
+		</property>
+		<property name="targetMethod">
+			<value>importIdentityCar</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_identityCardWork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_identityCardWork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 支付宝批量上挂 -->
+	<bean id="zfb" class="com.ideal.spdb.thirdinfo.work.batchimport.ZfbWork" />
+	<bean id="jobDetail_zfb"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="zfb" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayQueryAllZfbByXLS</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_zfb" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_zfb" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- IDCheck批量查询  -->
+	<bean id="idCheckBatchkwork" class="com.ideal.spdb.thirdinfo.work.batchimport.IdCheckWork" />
+	<bean id="jobDetail_idCheckBatchwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="idCheckBatchkwork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayQueryAllIdCheckByXLS</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_idCheckBatchwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_idCheckBatchwork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 腾讯征信信息上传审批  -->
+	<bean id="tencentUploadApprovalkwork" class="com.ideal.spdb.thirdinfo.work.TencentWork" />
+	<bean id="jobDetail_tencentUploadApprovalkwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="tencentUploadApprovalkwork" />
+		</property>
+		<property name="targetMethod">
+			<value>tencentUploadApprovalJob</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_tencentUploadApprovalkwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_tencentUploadApprovalkwork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 腾讯反欺诈信息上传审批  -->
+	<bean id="tencentFraudUploadApprovalwork" class="com.ideal.spdb.thirdinfo.work.TencentWork" />
+	<bean id="jobDetail_tencentFraudUploadApprovalwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="tencentFraudUploadApprovalwork" />
+		</property>
+		<property name="targetMethod">
+			<value>tencentFraudUploadApprovalJob</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_tencentFraudUploadApprovalwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_tencentFraudUploadApprovalwork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 腾讯反欺诈信息上传审批  -->
+	<bean id="ApprovalIdcheckwork" class="com.ideal.spdb.thirdinfo.work.ApprovalIdcheckWork" />
+	<bean id="jobDetail_ApprovalIdcheckwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="ApprovalIdcheckwork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayupload</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_ApprovalIdcheckwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_ApprovalIdcheckwork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+		<!-- 百融  -->
+	<bean id="Approvalbrwork" class="com.ideal.spdb.thirdinfo.work.approvalwork.ApprovalBairongWork" />
+	<bean id="jobDetail_Approvalbrcheckwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="Approvalbrwork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadApproval</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_Approvalbrcheckwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_Approvalbrcheckwork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+			<!-- 身份证匹配送审批   -->
+	<bean id="ApprovalIDwork" class="com.ideal.spdb.thirdinfo.work.approvalwork.ApprovalIdWork" />
+	<bean id="jobDetail_ApprovalIDwork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="ApprovalIDwork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadApproval</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_ApprovalIDwork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_ApprovalIDwork" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+	
+	<!-- 百融toCRM -->
+	<bean id="bairong2crm" class="com.ideal.spdb.thirdinfo.work.others.BairongCRMWork" />
+	<bean id="jobDetail_bairong2crm"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="bairong2crm" />
+		</property>
+		<property name="targetMethod">
+			<value>bairongCRMJob</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_bairong2crm" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_bairong2crm" />
+		</property>
+		<property name="cronExpression">
+			<value>00 * * * * ?</value>
+		</property>
+	</bean>
+	
+		<!-- 支付宝to审批 -->
+	<bean id="zhifubao" class="com.ideal.spdb.thirdinfo.work.others.ZfbzxWork" />
+	<bean id="jobDetail_zhifubao"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="zhifubao" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUpload</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_zhifubao" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_zhifubao" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+			<!-- zmxyIvs TO 审批 -->
+	<bean id="zmxyIvs" class="com.ideal.spdb.thirdinfo.work.approvalwork.ApprovalZmxyIvsWork" />
+	<bean id="jobDetail_zmxyIvs"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="zmxyIvs" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadApproval</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_zmxyIvs" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_zmxyIvs" />
+		</property>
+		<property name="cronExpression">
+			<value>0/1 * * * * ?</value>
+<!-- 			<value>* * * * * ?</value> -->
+		</property>
+	</bean>
+	
+				<!-- 内部黑名单入库 -->
+	<bean id="capsblacklist" class="com.ideal.spdb.thirdinfo.work.batchimport.CapsBlackListWork" />
+	<bean id="jobDetail_capsblacklist"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="capsblacklist" />
+		</property>
+		<property name="targetMethod">
+			<value>CapsListImport</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_capsblacklist" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_capsblacklist" />
+		</property>
+		<property name="cronExpression">
+			<value>* * * * * ?</value>
+		</property>
+	</bean>
+			<!-- instinct上传人脸识别  -->
+	<bean id="instinctFaceWork" class="com.ideal.spdb.thirdinfo.work.instinctwork.InstinctFaceWork" />
+	<!-- <bean id="jobDetail_instinctFaceWork"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="instinctFaceWork" />
+		</property>
+		<property name="targetMethod">
+			<value>everydayUploadInstinct</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	<bean id="cronTrigger_instinctFaceWork" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="jobDetail_instinctFaceWork" />
+		</property>
+		<property name="cronExpression">
+			<value>0 5 3 * * ?</value>
+		</property>
+	</bean> -->
+	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+<!-- 							<ref local="cronTrigger_ve"/> -->
+<!-- 				<ref local="cronTrigger_eucve"/> -->
+<!-- 				<ref local="cronTrigger_ss"/> -->
+<!-- 				<ref local="cronTrigger_public"/> -->
+<!-- 				<ref local="cronTrigger_whss"/> -->
+<!-- 				<ref local="cronTrigger_juxinliblacklist"/> -->
+<!-- 				<ref local="cronTrigger_juxinliblacklist_export"/> -->
+<!-- 				<ref local="tencent_cronTrigger"/> -->
+<!-- 				<ref local="tencentinstinct_cronTrigger"/> -->
+<!-- 				<ref local="cronTrigger_edu"/> -->
+<!-- 				<ref local="cronTrigger_SZO"/> -->
+<!-- 				<ref local="cronTrigger_shebaodatareturn"/> -->
+<!-- 				<ref local="cronTrigger_count"/>-->
+<!-- 				<ref local="cronTrigger_tencent2crm"/> -->
+<!-- 				<ref local="cronTrigger_approvaltencentwork"/> -->
+<!-- 				<ref local="cronTrigger_instinctwhwork"/> -->
+<!-- 				<ref local="cronTrigger_instinctszwork"/> -->
+<!-- 				<ref local="cronTrigger_instinctpublicwork"/> -->
+<!-- 				<ref local="cronTrigger_eduImportWork"/> -->
+<!-- 				<ref local="cronTrigger_juxinliImportWork"/> -->
+<!-- 				<ref local="cronTrigger_publicSecurityImportWork"/> -->
+<!-- 				<ref local="cronTrigger_publicSecurityTZRImportWork"/> -->
+<!-- 				<ref local="cronTrigger_OutputBlackListInfoWork"/> -->
+<!-- 				<ref local="cronTrigger_socialsecurityImportWork"/> -->
+<!--				<ref local="cronTrigger_zmxy" />-->
+<!--				<ref local="cronTrigger_instinctzfbwork" />-->
+<!-- 				<ref local="cronTrigger_bairong" /> -->
+<!-- 				<ref local="cronTrigger_instinctzmxywork" /> -->
+<!-- 				<ref local="cronTrigger_approvalGZmobilework" /> -->
+<!-- 				<ref local="cronTrigger_strategyCodeUploadwork" /> -->
+<!-- 				<ref local="cronTrigger_zfb" /> -->
+<!-- 				<ref local="cronTrigger_idCheckBatchwork" /> -->
+<!-- 				<ref local="cronTrigger_tencentUploadApprovalkwork"/> -->
+<!-- 					<ref local="cronTrigger_tencentFraudUploadApprovalwork"/> -->
+<!-- 					<ref local="cronTrigger_mobileNumberWork" /> -->
+<!-- 					<ref local="cronTrigger_identityCardWork" /> -->
+<!-- <ref local="cronTrigger_rucangwork" />  -->
+<!-- <ref local="cronTrigger_instinctIDwork" />  -->
+<!-- <ref local="cronTrigger_instinctMobilework" />  -->
+<!-- <ref local="cronTrigger_ApprovalIdcheckwork" />  -->
+<!-- 					<ref local="cronTrigger_bairong2crm"/> -->
+<!-- 					<ref local="cronTrigger_Approvalbrcheckwork"/> -->
+<!-- 					<ref local="cronTrigger_ApprovalIDwork"/> -->
+<!--					<ref local="cronTrigger_zhifubao"/>-->
+					<ref local="cronTrigger_zmxyIvs"/>
+<!-- 					<ref local="cronTrigger_capsblacklist"/> -->
+						<!-- <ref local="cronTrigger_instinctFaceWork"/> -->
+			</list>
+		</property>
+	</bean>
+</beans>
+

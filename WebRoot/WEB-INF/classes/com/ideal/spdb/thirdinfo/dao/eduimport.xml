@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="eduimport">
+
+	<!--获取社保信息列表 -->
+	<update id="insertOrUpdateAPP" parameterType="EduImportModel">
+		MERGE INTO pf_application pa
+		USING (select #{shenqingshucode,jdbcType=VARCHAR} as shenqingshucode from dual) pp
+		ON (pa.shenqingshucode = pp.shenqingshucode)
+		WHEN MATcHED THEN
+		update
+		set pa.shengqingrencardnumber = #{appno,jdbcType=VARCHAR},
+		pa.shenqingrenzhongwenminchen = #{appname,jdbcType=VARCHAR},
+		pa.processtype = '1'
+		where pa.shenqingshucode = pp.shenqingshucode
+		WHEN NOT MATcHED THEN
+		insert
+		(pa.applicationid,
+		pa.shenqingshucode,
+		pa.shengqingrencardnumber,
+		pa.shenqingrenzhongwenminchen,
+		pa.processtype,
+		pa.shenqingrencardtype)
+		values
+		('WX' || lpad(PF_APPRLETTER_ID_SEQ.Nextval, 8, '0') || '01',
+		#{shenqingshucode,jdbcType=VARCHAR},
+		#{appno,jdbcType=VARCHAR},
+		#{appname,jdbcType=VARCHAR},
+		'1',
+		'01')
+
+	</update>
+	<insert id="initProcess" parameterType="EduImportModel">
+		insert into pf_process (PROCESS_ID,APPLICATION_ID,FLOW,PROCESS_FINISH,IS_CHECK,FLAG,CREATE_DATE)
+		values
+		(pf_process_seq.Nextval,#{shenqingshucode,jdbcType=VARCHAR},'1','0','','2',sysdate)
+	</insert>
+
+</mapper>
